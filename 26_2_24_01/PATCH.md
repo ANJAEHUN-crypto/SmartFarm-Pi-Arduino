@@ -75,6 +75,16 @@
 
 ---
 
+## 7차 배포 (실시간·평균만 표시, 그래프 삭제)
+
+- **웹**
+  - **그래프 전부 제거**: Chart.js 스크립트·7개 canvas 삭제, 차트 관련 JS 제거
+  - **토양 센서 섹션**: 온도·습도·EC·pH·N·P·K 7개 지표에 대해 **실시간값**과 **7일 평균**만 카드 형태로 표시
+  - 같은 `/api/badge/history` 데이터로 마지막 1건 = 실시간, 전체 평균 = 7일 평균 계산
+- **수정 파일**: `index.html`, `app.js`, `style.css`, `PATCH.md`, `patch/07.md`, `patch/README.md`
+
+---
+
 ## 참고
 
 - 배포 후 Pi: `cd /home/pi/SmartFarm-Pi-Arduino && git pull origin main`  

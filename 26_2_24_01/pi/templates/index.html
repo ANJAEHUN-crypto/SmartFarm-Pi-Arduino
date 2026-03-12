@@ -16,38 +16,45 @@
   </header>
 
   <section class="badge-section">
-    <h2>토양 센서 주간 변화 추이 (지표별 고정 축)</h2>
-    <div class="badge-chart-grid">
-      <div class="chart-cell">
-        <h3 class="chart-title">온도 (°C)</h3>
-        <canvas id="chartTemp" width="300" height="160"></canvas>
+    <h2>토양 센서 (실시간 / 7일 평균)</h2>
+    <div class="badge-value-grid">
+      <div class="badge-value-card">
+        <span class="badge-value-label">온도</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgeTempCurrent">-</span> °C</div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgeTempAvg">-</span> °C</div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">습도 (%)</h3>
-        <canvas id="chartHumi" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">습도</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgeHumiCurrent">-</span> %</div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgeHumiAvg">-</span> %</div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">EC (µS/cm)</h3>
-        <canvas id="chartEC" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">EC</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgeECCurrent">-</span> µS/cm</div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgeECAvg">-</span> µS/cm</div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">pH</h3>
-        <canvas id="chartPH" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">pH</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgePHCurrent">-</span></div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgePHAvg">-</span></div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">N</h3>
-        <canvas id="chartN" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">N</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgeNCurrent">-</span></div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgeNAvg">-</span></div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">P</h3>
-        <canvas id="chartP" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">P</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgePCurrent">-</span></div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgePAvg">-</span></div>
       </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">K</h3>
-        <canvas id="chartK" width="300" height="160"></canvas>
+      <div class="badge-value-card">
+        <span class="badge-value-label">K</span>
+        <div class="badge-value-row"><span>실시간</span><span id="badgeKCurrent">-</span></div>
+        <div class="badge-value-row"><span>7일 평균</span><span id="badgeKAvg">-</span></div>
       </div>
     </div>
-    <p class="badge-hint">최근 7일, X축 1시간 단위·고정. N·P·K는 센서에서 오면 표시됩니다.</p>
+    <p class="badge-hint">최근 7일 데이터 기준 평균. N·P·K는 센서에서 오면 표시됩니다.</p>
   </section>
 
   <section class="relay-section">
@@ -128,7 +135,6 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

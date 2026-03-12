@@ -148,102 +148,67 @@
     });
   });
 
-  // 토양 센서 주간 그래프 — 지표별 7개(온·습·EC·pH·N·P·K), X·Y축 고정, X축 1시간 단위 라벨
-  const MAX_POINTS = 400;
-  const Y_AXIS = { temp: [0, 50], humi: [0, 100], ec: [0, 2000], ph: [0, 14], npk: [0, 200] };
-  let chartTemp = null, chartHumi = null, chartEC = null, chartPH = null, chartN = null, chartP = null, chartK = null;
-  const ALL_CHARTS = () => [chartTemp, chartHumi, chartEC, chartPH, chartN, chartP, chartK].filter(Boolean);
-
-  function makeChart(canvasId, label, color, yMin, yMax) {
-    const ctx = document.getElementById(canvasId);
-    if (!ctx) return null;
-    return new Chart(ctx.getContext('2d'), {
-      type: 'line',
-      data: { labels: [], datasets: [{ label: label, data: [], borderColor: color, tension: 0.1, fill: false }] },
-      options: {
-        responsive: true,
-        animation: false,
-        scales: {
-          x: { display: true, title: { display: true, text: '시각 (1h)' }, min: 0, max: MAX_POINTS - 1 },
-          y: { display: true, min: yMin, max: yMax }
-        }
-      }
-    });
+  // 토양 센서 — 실시간값 / 7일 평균만 표시 (그래프 없음)
+  function setBadgeEl(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val == null || (typeof val === 'number' && isNaN(val)) ? '-' : val;
   }
 
-  async function refreshBadgeChart() {
+  async function refreshBadgeValues() {
     try {
       const r = await fetch('/api/badge/history?days=7&limit=3000');
       const j = await r.json();
       if (!j.ok || !j.history || !j.history.length) {
-        ALL_CHARTS().forEach((c) => {
-          if (c) { c.data.labels = []; c.data.datasets[0].data = []; c.update('none'); }
+        ['Temp', 'Humi', 'EC', 'PH', 'N', 'P', 'K'].forEach((name) => {
+          setBadgeEl('badge' + name + 'Current', null);
+          setBadgeEl('badge' + name + 'Avg', null);
         });
         return;
       }
-      const hist = j.history.slice(-MAX_POINTS);
-      // 1시간 단위만 라벨 표시 (분이 0인 시점만)
-      const labels = hist.map((d) => {
-        const dt = new Date(d.t * 1000);
-        const min = dt.getMinutes();
-        if (min !== 0) return '';
-        return dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit' });
-      });
-      const temp = [], humi = [], ec = [], ph = [], n = [], p = [], k = [];
+      const hist = j.history;
+      const keys = [
+        { cur: 'badgeTempCurrent', avg: 'badgeTempAvg', raw: 'soil_temperature' },
+        { cur: 'badgeHumiCurrent', avg: 'badgeHumiAvg', raw: 'soil_humidity' },
+        { cur: 'badgeECCurrent', avg: 'badgeECAvg', raw: 'soil_EC' },
+        { cur: 'badgePHCurrent', avg: 'badgePHAvg', raw: 'soil_ph' },
+        { cur: 'badgeNCurrent', avg: 'badgeNAvg', raw: 'soil_N' },
+        { cur: 'badgePCurrent', avg: 'badgePAvg', raw: 'soil_P' },
+        { cur: 'badgeKCurrent', avg: 'badgeKAvg', raw: 'soil_K' }
+      ];
+      const last = hist[hist.length - 1];
+      let lastRaw = null;
+      try {
+        lastRaw = typeof last.raw === 'string' ? JSON.parse(last.raw) : last.raw;
+      } catch (_) {}
+      const sums = {};
+      const counts = {};
       hist.forEach((d) => {
         try {
           const raw = typeof d.raw === 'string' ? JSON.parse(d.raw) : d.raw;
           if (raw && typeof raw === 'object') {
-            temp.push(raw.soil_temperature != null ? Number(raw.soil_temperature) : null);
-            humi.push(raw.soil_humidity != null ? Number(raw.soil_humidity) : null);
-            ec.push(raw.soil_EC != null ? Number(raw.soil_EC) : null);
-            ph.push(raw.soil_ph != null ? Number(raw.soil_ph) : null);
-            n.push(raw.soil_N != null ? Number(raw.soil_N) : null);
-            p.push(raw.soil_P != null ? Number(raw.soil_P) : null);
-            k.push(raw.soil_K != null ? Number(raw.soil_K) : null);
-          } else {
-            temp.push(null); humi.push(null); ec.push(null); ph.push(null); n.push(null); p.push(null); k.push(null);
+            keys.forEach((k) => {
+              const v = raw[k.raw];
+              if (v != null && !isNaN(Number(v))) {
+                if (!sums[k.raw]) sums[k.raw] = 0;
+                sums[k.raw] += Number(v);
+                counts[k.raw] = (counts[k.raw] || 0) + 1;
+              }
+            });
           }
-        } catch (e) {
-          temp.push(null); humi.push(null); ec.push(null); ph.push(null); n.push(null); p.push(null); k.push(null);
-        }
+        } catch (_) {}
       });
-
-      if (!chartTemp) {
-        chartTemp = makeChart('chartTemp', '온도(°C)', 'rgb(255,99,71)', Y_AXIS.temp[0], Y_AXIS.temp[1]);
-        chartHumi = makeChart('chartHumi', '습도(%)', 'rgb(65,105,225)', Y_AXIS.humi[0], Y_AXIS.humi[1]);
-        chartEC  = makeChart('chartEC',  'EC(µS/cm)', 'rgb(34,139,34)', Y_AXIS.ec[0], Y_AXIS.ec[1]);
-        chartPH  = makeChart('chartPH',  'pH', 'rgb(148,0,211)', Y_AXIS.ph[0], Y_AXIS.ph[1]);
-        chartN   = makeChart('chartN',   'N', 'rgb(205,133,63)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
-        chartP   = makeChart('chartP',   'P', 'rgb(70,130,180)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
-        chartK   = makeChart('chartK',   'K', 'rgb(85,107,47)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
-      }
-      chartTemp.data.labels = labels;
-      chartTemp.data.datasets[0].data = temp;
-      chartHumi.data.labels = labels;
-      chartHumi.data.datasets[0].data = humi;
-      chartEC.data.labels = labels;
-      chartEC.data.datasets[0].data = ec;
-      chartPH.data.labels = labels;
-      chartPH.data.datasets[0].data = ph;
-      chartN.data.labels = labels;
-      chartN.data.datasets[0].data = n;
-      chartP.data.labels = labels;
-      chartP.data.datasets[0].data = p;
-      chartK.data.labels = labels;
-      chartK.data.datasets[0].data = k;
-      // X축 고정 — 매 갱신 시 min/max 재설정
-      ALL_CHARTS().forEach((c) => {
-        if (c && c.options && c.options.scales && c.options.scales.x) {
-          c.options.scales.x.min = 0;
-          c.options.scales.x.max = MAX_POINTS - 1;
-        }
-        c.update('none');
+      keys.forEach((k) => {
+        const curVal = lastRaw && lastRaw[k.raw] != null ? Number(lastRaw[k.raw]) : null;
+        const n = counts[k.raw] || 0;
+        const avgVal = n > 0 && sums[k.raw] != null ? Math.round(sums[k.raw] / n * 10) / 10 : null;
+        setBadgeEl(k.cur, curVal);
+        setBadgeEl(k.avg, avgVal);
       });
     } catch (_) {}
   }
-  setInterval(refreshBadgeChart, 5000);
-  refreshBadgeChart();
+  setInterval(refreshBadgeValues, 5000);
+  refreshBadgeValues();
 
   fetchSerialStatus();
   loadSchedules();

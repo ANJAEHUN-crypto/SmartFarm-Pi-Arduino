@@ -9,9 +9,11 @@ h1 { margin: 0; font-size: 1.5rem; }
 
 .relay-section, .schedule-section, .badge-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .relay-section h2, .schedule-section h2, .badge-section h2 { margin-top: 0; font-size: 1.1rem; }
-.badge-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.5rem 0; }
-.chart-cell { background: #fafafa; border-radius: 6px; padding: 0.5rem; border: 1px solid #eee; }
-.chart-cell .chart-title { margin: 0 0 0.25rem 0; font-size: 0.95rem; color: #333; }
+.badge-value-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin: 0.5rem 0; }
+.badge-value-card { background: #fafafa; border-radius: 8px; padding: 0.75rem; border: 1px solid #eee; }
+.badge-value-card .badge-value-label { display: block; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.35rem; color: #333; }
+.badge-value-card .badge-value-row { font-size: 0.9rem; color: #555; margin: 0.2rem 0; }
+.badge-value-card .badge-value-row span:last-of-type { font-weight: 600; color: #111; margin-left: 0.25rem; }
 .badge-hint { font-size: 0.9rem; color: #666; margin: 0.5rem 0 0 0; }
 .relay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 .relay-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
