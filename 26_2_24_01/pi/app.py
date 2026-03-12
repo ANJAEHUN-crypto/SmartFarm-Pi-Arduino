@@ -98,11 +98,14 @@ def api_relay_state():
 # ---------- 배지(RS485) API (그래프용) ----------
 @app.route("/api/badge/history")
 def api_badge_history():
-    limit = request.args.get("limit", 100, type=int)
-    if limit <= 0 or limit > 500:
-        limit = 100
+    limit = request.args.get("limit", 2000, type=int)
+    days = request.args.get("days", 7, type=int)  # 기본 주간(7일)
+    if limit <= 0 or limit > 5000:
+        limit = 2000
+    if days <= 0 or days > 30:
+        days = 7
     try:
-        data = badge_mqtt.get_badge_history(limit=limit)
+        data = badge_mqtt.get_badge_history(limit=limit, days=days)
         return jsonify({"ok": True, "history": data})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500

@@ -10,6 +10,8 @@ import time
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 BADGE_JSON = os.path.join(DATA_DIR, "badge_history.json")
 MAX_HISTORY = 500
+SECONDS_PER_DAY = 86400
+WEEK_DAYS = 7
 
 _mqtt_client = None
 _mqtt_enabled = False
@@ -27,8 +29,11 @@ def _load_history():
 
 
 def _save_history(history):
+    """7일 초과 데이터 제거 후 저장."""
     os.makedirs(DATA_DIR, exist_ok=True)
     try:
+        cutoff = time.time() - (WEEK_DAYS * SECONDS_PER_DAY)
+        history = [x for x in history if x.get("t", 0) >= cutoff]
         with open(BADGE_JSON, "w", encoding="utf-8") as f:
             json.dump(history[-MAX_HISTORY:], f, ensure_ascii=False, indent=0)
     except Exception:
@@ -119,7 +124,10 @@ def process_pending_badge_lines(config=None):
     return out
 
 
-def get_badge_history(limit=100):
-    """그래프/API용: 최근 배지 기록 반환."""
+def get_badge_history(limit=100, days=None):
+    """그래프/API용: 최근 배지 기록 반환. days=7 이면 최근 7일만."""
     history = _load_history()
+    if days is not None and days > 0:
+        cutoff = time.time() - (days * SECONDS_PER_DAY)
+        history = [x for x in history if x.get("t", 0) >= cutoff]
     return history[-limit:]

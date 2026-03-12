@@ -148,16 +148,16 @@
     });
   });
 
-  // 배지 그래프 (Chart.js)
+  // 토양 센서 주간 그래프 (온도·습도·EC·pH 4선)
   let badgeChart = null;
   async function refreshBadgeChart() {
     try {
-      const r = await fetch('/api/badge/history?limit=80');
+      const r = await fetch('/api/badge/history?days=7&limit=3000');
       const j = await r.json();
       if (!j.ok || !j.history || !j.history.length) {
         if (badgeChart) {
           badgeChart.data.labels = [];
-          badgeChart.data.datasets[0].data = [];
+          badgeChart.data.datasets.forEach((ds) => { ds.data = []; });
           badgeChart.update('none');
         }
         return;
@@ -165,9 +165,24 @@
       const hist = j.history;
       const labels = hist.map((d) => {
         const dt = new Date(d.t * 1000);
-        return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
       });
-      const data = hist.map((_, i) => i + 1);
+      const temp = [], humi = [], ec = [], ph = [];
+      hist.forEach((d) => {
+        try {
+          const raw = typeof d.raw === 'string' ? JSON.parse(d.raw) : d.raw;
+          if (raw && typeof raw === 'object') {
+            temp.push(raw.soil_temperature != null ? Number(raw.soil_temperature) : null);
+            humi.push(raw.soil_humidity != null ? Number(raw.soil_humidity) : null);
+            ec.push(raw.soil_EC != null ? Number(raw.soil_EC) : null);
+            ph.push(raw.soil_ph != null ? Number(raw.soil_ph) : null);
+          } else {
+            temp.push(null); humi.push(null); ec.push(null); ph.push(null);
+          }
+        } catch (e) {
+          temp.push(null); humi.push(null); ec.push(null); ph.push(null);
+        }
+      });
       if (!badgeChart) {
         const ctx = document.getElementById('badgeChart');
         if (!ctx) return;
@@ -175,25 +190,28 @@
           type: 'line',
           data: {
             labels: labels,
-            datasets: [{
-              label: '배지 수신 순서',
-              data: data,
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1,
-              fill: false
-            }]
+            datasets: [
+              { label: '온도(°C)', data: temp, borderColor: 'rgb(255,99,71)', tension: 0.1, fill: false },
+              { label: '습도(%)', data: humi, borderColor: 'rgb(65,105,225)', tension: 0.1, fill: false },
+              { label: 'EC(µS/cm)', data: ec, borderColor: 'rgb(34,139,34)', tension: 0.1, fill: false },
+              { label: 'pH', data: ph, borderColor: 'rgb(148,0,211)', tension: 0.1, fill: false }
+            ]
           },
           options: {
             responsive: true,
+            interaction: { mode: 'index', intersect: false },
             scales: {
-              x: { display: true, title: { display: true, text: '시각' } },
-              y: { display: true, title: { display: true, text: '건수' }, min: 0 }
+              x: { display: true, title: { display: true, text: '시각 (주간)' } },
+              y: { display: true, title: { display: true, text: '값' }, min: 0 }
             }
           }
         });
       } else {
         badgeChart.data.labels = labels;
-        badgeChart.data.datasets[0].data = data;
+        badgeChart.data.datasets[0].data = temp;
+        badgeChart.data.datasets[1].data = humi;
+        badgeChart.data.datasets[2].data = ec;
+        badgeChart.data.datasets[3].data = ph;
         badgeChart.update('none');
       }
     } catch (_) {}
