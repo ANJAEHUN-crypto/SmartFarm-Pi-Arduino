@@ -148,21 +148,41 @@
     });
   });
 
-  // 토양 센서 주간 그래프 (온도·습도·EC·pH 4선)
-  let badgeChart = null;
+  // 토양 센서 주간 그래프 — 지표별 4개, X·Y축 고정
+  const MAX_POINTS = 400;
+  const Y_AXIS = { temp: [0, 50], humi: [0, 100], ec: [0, 2000], ph: [0, 14] };
+  let chartTemp = null, chartHumi = null, chartEC = null, chartPH = null;
+
+  function makeChart(canvasId, label, color, yMin, yMax) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    return new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: label, data: [], borderColor: color, tension: 0.1, fill: false }] },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: {
+          x: { display: true, title: { display: true, text: '시각 (고정)' }, min: 0, max: MAX_POINTS - 1 },
+          y: { display: true, min: yMin, max: yMax }
+        }
+      }
+    });
+  }
+
   async function refreshBadgeChart() {
     try {
       const r = await fetch('/api/badge/history?days=7&limit=3000');
       const j = await r.json();
       if (!j.ok || !j.history || !j.history.length) {
-        if (badgeChart) {
-          badgeChart.data.labels = [];
-          badgeChart.data.datasets.forEach((ds) => { ds.data = []; });
-          badgeChart.update('none');
+        if (chartTemp) {
+          [chartTemp, chartHumi, chartEC, chartPH].forEach((c) => {
+            if (c) { c.data.labels = []; c.data.datasets[0].data = []; c.update('none'); }
+          });
         }
         return;
       }
-      const hist = j.history;
+      const hist = j.history.slice(-MAX_POINTS);
       const labels = hist.map((d) => {
         const dt = new Date(d.t * 1000);
         return dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -183,37 +203,25 @@
           temp.push(null); humi.push(null); ec.push(null); ph.push(null);
         }
       });
-      if (!badgeChart) {
-        const ctx = document.getElementById('badgeChart');
-        if (!ctx) return;
-        badgeChart = new Chart(ctx.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              { label: '온도(°C)', data: temp, borderColor: 'rgb(255,99,71)', tension: 0.1, fill: false },
-              { label: '습도(%)', data: humi, borderColor: 'rgb(65,105,225)', tension: 0.1, fill: false },
-              { label: 'EC(µS/cm)', data: ec, borderColor: 'rgb(34,139,34)', tension: 0.1, fill: false },
-              { label: 'pH', data: ph, borderColor: 'rgb(148,0,211)', tension: 0.1, fill: false }
-            ]
-          },
-          options: {
-            responsive: true,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-              x: { display: true, title: { display: true, text: '시각 (주간)' } },
-              y: { display: true, title: { display: true, text: '값' }, min: 0 }
-            }
-          }
-        });
-      } else {
-        badgeChart.data.labels = labels;
-        badgeChart.data.datasets[0].data = temp;
-        badgeChart.data.datasets[1].data = humi;
-        badgeChart.data.datasets[2].data = ec;
-        badgeChart.data.datasets[3].data = ph;
-        badgeChart.update('none');
+
+      if (!chartTemp) {
+        chartTemp = makeChart('chartTemp', '온도(°C)', 'rgb(255,99,71)', Y_AXIS.temp[0], Y_AXIS.temp[1]);
+        chartHumi = makeChart('chartHumi', '습도(%)', 'rgb(65,105,225)', Y_AXIS.humi[0], Y_AXIS.humi[1]);
+        chartEC  = makeChart('chartEC',  'EC(µS/cm)', 'rgb(34,139,34)', Y_AXIS.ec[0], Y_AXIS.ec[1]);
+        chartPH  = makeChart('chartPH',  'pH', 'rgb(148,0,211)', Y_AXIS.ph[0], Y_AXIS.ph[1]);
       }
+      chartTemp.data.labels = labels;
+      chartTemp.data.datasets[0].data = temp;
+      chartHumi.data.labels = labels;
+      chartHumi.data.datasets[0].data = humi;
+      chartEC.data.labels = labels;
+      chartEC.data.datasets[0].data = ec;
+      chartPH.data.labels = labels;
+      chartPH.data.datasets[0].data = ph;
+      chartTemp.update('none');
+      chartHumi.update('none');
+      chartEC.update('none');
+      chartPH.update('none');
     } catch (_) {}
   }
   setInterval(refreshBadgeChart, 5000);
