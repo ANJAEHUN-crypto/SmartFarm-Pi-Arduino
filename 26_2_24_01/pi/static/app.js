@@ -148,10 +148,11 @@
     });
   });
 
-  // 토양 센서 주간 그래프 — 지표별 4개, X·Y축 고정
+  // 토양 센서 주간 그래프 — 지표별 7개(온·습·EC·pH·N·P·K), X·Y축 고정, X축 1시간 단위 라벨
   const MAX_POINTS = 400;
-  const Y_AXIS = { temp: [0, 50], humi: [0, 100], ec: [0, 2000], ph: [0, 14] };
-  let chartTemp = null, chartHumi = null, chartEC = null, chartPH = null;
+  const Y_AXIS = { temp: [0, 50], humi: [0, 100], ec: [0, 2000], ph: [0, 14], npk: [0, 200] };
+  let chartTemp = null, chartHumi = null, chartEC = null, chartPH = null, chartN = null, chartP = null, chartK = null;
+  const ALL_CHARTS = () => [chartTemp, chartHumi, chartEC, chartPH, chartN, chartP, chartK].filter(Boolean);
 
   function makeChart(canvasId, label, color, yMin, yMax) {
     const ctx = document.getElementById(canvasId);
@@ -163,7 +164,7 @@
         responsive: true,
         animation: false,
         scales: {
-          x: { display: true, title: { display: true, text: '시각 (고정)' }, min: 0, max: MAX_POINTS - 1 },
+          x: { display: true, title: { display: true, text: '시각 (1h)' }, min: 0, max: MAX_POINTS - 1 },
           y: { display: true, min: yMin, max: yMax }
         }
       }
@@ -175,19 +176,20 @@
       const r = await fetch('/api/badge/history?days=7&limit=3000');
       const j = await r.json();
       if (!j.ok || !j.history || !j.history.length) {
-        if (chartTemp) {
-          [chartTemp, chartHumi, chartEC, chartPH].forEach((c) => {
-            if (c) { c.data.labels = []; c.data.datasets[0].data = []; c.update('none'); }
-          });
-        }
+        ALL_CHARTS().forEach((c) => {
+          if (c) { c.data.labels = []; c.data.datasets[0].data = []; c.update('none'); }
+        });
         return;
       }
       const hist = j.history.slice(-MAX_POINTS);
+      // 1시간 단위만 라벨 표시 (분이 0인 시점만)
       const labels = hist.map((d) => {
         const dt = new Date(d.t * 1000);
-        return dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const min = dt.getMinutes();
+        if (min !== 0) return '';
+        return dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit' });
       });
-      const temp = [], humi = [], ec = [], ph = [];
+      const temp = [], humi = [], ec = [], ph = [], n = [], p = [], k = [];
       hist.forEach((d) => {
         try {
           const raw = typeof d.raw === 'string' ? JSON.parse(d.raw) : d.raw;
@@ -196,11 +198,14 @@
             humi.push(raw.soil_humidity != null ? Number(raw.soil_humidity) : null);
             ec.push(raw.soil_EC != null ? Number(raw.soil_EC) : null);
             ph.push(raw.soil_ph != null ? Number(raw.soil_ph) : null);
+            n.push(raw.soil_N != null ? Number(raw.soil_N) : null);
+            p.push(raw.soil_P != null ? Number(raw.soil_P) : null);
+            k.push(raw.soil_K != null ? Number(raw.soil_K) : null);
           } else {
-            temp.push(null); humi.push(null); ec.push(null); ph.push(null);
+            temp.push(null); humi.push(null); ec.push(null); ph.push(null); n.push(null); p.push(null); k.push(null);
           }
         } catch (e) {
-          temp.push(null); humi.push(null); ec.push(null); ph.push(null);
+          temp.push(null); humi.push(null); ec.push(null); ph.push(null); n.push(null); p.push(null); k.push(null);
         }
       });
 
@@ -209,6 +214,9 @@
         chartHumi = makeChart('chartHumi', '습도(%)', 'rgb(65,105,225)', Y_AXIS.humi[0], Y_AXIS.humi[1]);
         chartEC  = makeChart('chartEC',  'EC(µS/cm)', 'rgb(34,139,34)', Y_AXIS.ec[0], Y_AXIS.ec[1]);
         chartPH  = makeChart('chartPH',  'pH', 'rgb(148,0,211)', Y_AXIS.ph[0], Y_AXIS.ph[1]);
+        chartN   = makeChart('chartN',   'N', 'rgb(205,133,63)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
+        chartP   = makeChart('chartP',   'P', 'rgb(70,130,180)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
+        chartK   = makeChart('chartK',   'K', 'rgb(85,107,47)', Y_AXIS.npk[0], Y_AXIS.npk[1]);
       }
       chartTemp.data.labels = labels;
       chartTemp.data.datasets[0].data = temp;
@@ -218,10 +226,20 @@
       chartEC.data.datasets[0].data = ec;
       chartPH.data.labels = labels;
       chartPH.data.datasets[0].data = ph;
-      chartTemp.update('none');
-      chartHumi.update('none');
-      chartEC.update('none');
-      chartPH.update('none');
+      chartN.data.labels = labels;
+      chartN.data.datasets[0].data = n;
+      chartP.data.labels = labels;
+      chartP.data.datasets[0].data = p;
+      chartK.data.labels = labels;
+      chartK.data.datasets[0].data = k;
+      // X축 고정 — 매 갱신 시 min/max 재설정
+      ALL_CHARTS().forEach((c) => {
+        if (c && c.options && c.options.scales && c.options.scales.x) {
+          c.options.scales.x.min = 0;
+          c.options.scales.x.max = MAX_POINTS - 1;
+        }
+        c.update('none');
+      });
     } catch (_) {}
   }
   setInterval(refreshBadgeChart, 5000);

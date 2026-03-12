@@ -15,6 +15,41 @@
     </div>
   </header>
 
+  <section class="badge-section">
+    <h2>토양 센서 주간 변화 추이 (지표별 고정 축)</h2>
+    <div class="badge-chart-grid">
+      <div class="chart-cell">
+        <h3 class="chart-title">온도 (°C)</h3>
+        <canvas id="chartTemp" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">습도 (%)</h3>
+        <canvas id="chartHumi" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">EC (µS/cm)</h3>
+        <canvas id="chartEC" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">pH</h3>
+        <canvas id="chartPH" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">N</h3>
+        <canvas id="chartN" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">P</h3>
+        <canvas id="chartP" width="300" height="160"></canvas>
+      </div>
+      <div class="chart-cell">
+        <h3 class="chart-title">K</h3>
+        <canvas id="chartK" width="300" height="160"></canvas>
+      </div>
+    </div>
+    <p class="badge-hint">최근 7일, X축 1시간 단위·고정. N·P·K는 센서에서 오면 표시됩니다.</p>
+  </section>
+
   <section class="relay-section">
     <h2>릴레이 원격 ON/OFF</h2>
     <div class="relay-grid">
@@ -51,29 +86,6 @@
         </div>
       </div>
     </div>
-  </section>
-
-  <section class="badge-section">
-    <h2>토양 센서 주간 변화 추이 (지표별 고정 축)</h2>
-    <div class="badge-chart-grid">
-      <div class="chart-cell">
-        <h3 class="chart-title">온도 (°C)</h3>
-        <canvas id="chartTemp" width="300" height="160"></canvas>
-      </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">습도 (%)</h3>
-        <canvas id="chartHumi" width="300" height="160"></canvas>
-      </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">EC (µS/cm)</h3>
-        <canvas id="chartEC" width="300" height="160"></canvas>
-      </div>
-      <div class="chart-cell">
-        <h3 class="chart-title">pH</h3>
-        <canvas id="chartPH" width="300" height="160"></canvas>
-      </div>
-    </div>
-    <p class="badge-hint">최근 7일, 축 고정. 7일 지난 데이터는 자동 삭제됩니다.</p>
   </section>
 
   <section class="schedule-section">
