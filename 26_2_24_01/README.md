@@ -4,8 +4,9 @@
 
 ## 구성 요약
 
-- **라즈베리파이**: 웹 서버(Flask), 시리얼 제어, 스케줄 실행, (선택) 캠 촬영
-- **아두이노 우노 R4 Wi-Fi**: USB 시리얼로 4ch 릴레이 제어
+- **RS485** → **아두이노 R4 WiFi** (D6,D7,D8) → **라즈베리파이** (USB 시리얼) → **HiveMQ(MQTT)** → 웹 그래프
+- **라즈베리파이**: 웹 서버(Flask), 시리얼 제어, 배지 수신·MQTT 퍼블리시, 스케줄 실행, (선택) 캠 촬영
+- **아두이노 우노 R4 Wi-Fi**: USB 시리얼로 4ch 릴레이 제어 + RS485 배지 데이터 수신 후 Pi로 전달
 - **릴레이**: 1ch(LED1), 2ch(PUMP1), 3ch(LED2), 4ch(PUMP2) — NO 접점
 
 ## 디렉터리 구조
@@ -15,8 +16,9 @@
 ├── requirements.txt
 ├── config.example.json   → 복사하여 config.json 생성
 ├── data/
-│   ├── schedules.json    (스케줄 저장, 자동 생성)
-│   └── photos/           (캠 촬영 저장)
+│   ├── schedules.json     (스케줄 저장, 자동 생성)
+│   ├── badge_history.json (배지 수신 기록, 그래프/API용)
+│   └── photos/            (캠 촬영 저장)
 ├── arduino/
 │   └── smart_farm_relay/
 │       └── smart_farm_relay.ino
@@ -24,7 +26,8 @@
     ├── app.py              # Flask 웹 서버
     ├── serial_relay.py      # 아두이노 시리얼 제어
     ├── schedule_store.py   # 스케줄 저장/로드 (채널당 10개, 시각 순 정렬)
-    ├── scheduler_service.py # 1분마다 스케줄 실행
+    ├── scheduler_service.py # 1분마다 스케줄 실행, 1초마다 배지 폴링
+    ├── badge_mqtt.py       # 배지 수집 → HiveMQ 퍼블리시, data/badge_history.json
     ├── camera_capture.py    # 일정 시간 촬영 (별도 실행 또는 cron)
     ├── static/
     │   ├── style.css
@@ -35,10 +38,33 @@
 
 ## 사용 방법
 
-### 1. 아두이노
+### 1. 아두이노 (우노 R4 WiFi)
+
+**릴레이 결선 (기존)**
+
+| 릴레이 채널 | 아두이노 핀 |
+|------------|-------------|
+| 1ch (LED1)  | D2 |
+| 2ch (PUMP1) | D3 |
+| 3ch (LED2)  | D4 |
+| 4ch (PUMP2) | D5 |
+
+**RS485 모듈(MAX485 등) 결선**
+
+| RS485 모듈 단자 | 아두이노 핀 | 비고 |
+|-----------------|-------------|------|
+| RO (Receiver Out) | D6 | 수신 데이터 → 아두이노 |
+| DI (Driver In)    | D7 | 아두이노 → 송신 데이터 |
+| DE (Driver Enable) | D8 | HIGH=송신, LOW=수신 (RE와 함께 연결) |
+| RE (Receiver Enable) | D8 | DE와 함께 D8 한 핀에 연결 |
+| VCC | 5V | |
+| GND | GND | |
+
+- USB 시리얼(D0/D1)은 라즈베리파이와 통신용으로 사용하므로 RS485는 **D6(RX), D7(TX), D8(DE/RE)** 사용 권장.
+- DE와 RE는 점퍼로 묶어서 D8 하나로 제어하면 됩니다.
 
 1. `arduino/smart_farm_relay/smart_farm_relay.ino` 를 Arduino IDE로 열기
-2. 릴레이 연결: 1ch→D2, 2ch→D3, 3ch→D4, 4ch→D5 (필요 시 `RELAY_PINS[]` 수정)
+2. 위 결선대로 릴레이(2~5), RS485(6,7,8) 연결
 3. 보드/포트 선택 후 업로드
 4. USB로 라즈베리파이에 연결
 
@@ -82,10 +108,29 @@ pip install -r ../requirements.txt
   ```
 - Pi 공식 카메라: `picamera2` 설치 후 사용. USB 캠: `opencv-python-headless` 로 `camera_capture.py` 내 USB 캠 경로 사용 가능.
 
-## MQTT 사용 시 (선택)
+## RS485 배지 + HiveMQ (MQTT)
 
-- 웹만으로도 원격 ON/OFF·스케줄·촬영 가능.
-- MQTT를 쓰려면 Pi에서 브로커(Mosquitto 등) 실행 후, Flask 앱에 MQTT 클라이언트를 붙여 토픽으로 ON/OFF/상태를 주고받게 하면 됩니다. 필요 시 별도 스크립트 `mqtt_bridge.py` 로 웹 API ↔ MQTT 연동 가능.
+- 아두이노가 RS485로 수신한 한 줄 데이터는 USB 시리얼로 `BADGE <내용>` 형태로 Pi에 전달됨.
+- Pi는 1초마다 수신한 배지 줄을 `config.json` 의 `mqtt` 설정이 켜져 있으면 HiveMQ 토픽(`smartfarm/badge`)으로 퍼블리시함.
+- **HiveMQ Cloud** 사용 시 포트 8883, TLS, username/password 필요. `config.json` 예시:
+  ```json
+  "mqtt": {
+    "enabled": true,
+    "broker": "YOUR_CLUSTER.s1.eu.hivemq.cloud",
+    "port": 8883,
+    "topic": "greenbean",
+    "client_id": "smartfarm-pi",
+    "username": "your_username",
+    "password": "your_password",
+    "tls": true
+  }
+  ```
+- 센서에서 한 줄이 **JSON 문자열**이면(예: `{"sensor":"temp","value":25.5}`) 그대로 파싱해 `t`(타임스탬프)와 합친 하나의 JSON으로 토픽에 퍼블리시함.
+- 배지 기록은 `data/badge_history.json` 에 저장되며, 웹의 **RS485 배지 데이터 (그래프)** 섹션과 `GET /api/badge/history?limit=100` API로 확인 가능.
+
+## 연결 끊김 시 이메일 알림 (선택)
+
+- `config.json` 의 `alert` 에서 `email_enabled: true` 로 두고 SMTP 정보·수신 주소(`to_email`)를 넣으면, 시리얼이 열려 있는데 `disconnect_seconds`(기본 300초) 동안 응답이 없을 때 한 번 이메일로 알림을 보냅니다. (재연결 후에는 다시 감지 가능.)
 
 ## 포트
 

@@ -7,8 +7,10 @@ h1 { margin: 0; font-size: 1.5rem; }
 #serialStatus.connected { color: #0a0; }
 #btnSerialToggle { padding: 0.4rem 0.8rem; cursor: pointer; }
 
-.relay-section, .schedule-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.relay-section h2, .schedule-section h2 { margin-top: 0; font-size: 1.1rem; }
+.relay-section, .schedule-section, .badge-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.relay-section h2, .schedule-section h2, .badge-section h2 { margin-top: 0; font-size: 1.1rem; }
+.badge-chart-wrap { max-width: 600px; margin: 0.5rem 0; }
+.badge-hint { font-size: 0.9rem; color: #666; margin: 0.5rem 0 0 0; }
 .relay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 .relay-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
 .relay-card .label { display: block; font-weight: bold; margin-bottom: 0.5rem; }

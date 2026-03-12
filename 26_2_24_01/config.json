@@ -3,9 +3,28 @@
     "port": "/dev/ttyACM0",
     "baud": 9600
   },
+  "mqtt": {
+    "enabled": true,
+    "broker": "5e39b72200da44f990b94fb9056ab8af.s1.eu.hivemq.cloud",
+    "port": 8883,
+    "topic": "greenbean",
+    "client_id": "smartfarm-pi",
+    "username": "greenbean02",
+    "password": "A123J567h",
+    "tls": true
+  },
   "camera": {
     "enabled": false,
     "interval_seconds": 3600,
     "save_dir": "data/photos"
+  },
+  "alert": {
+    "email_enabled": false,
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_password": "",
+    "to_email": "",
+    "disconnect_seconds": 300
   }
 }

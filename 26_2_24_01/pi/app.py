@@ -11,6 +11,7 @@ from flask import Flask, request, jsonify, send_from_directory, render_template
 import serial_relay
 import schedule_store
 import scheduler_service
+import badge_mqtt
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -22,6 +23,7 @@ if os.path.exists(config_path):
         CONFIG = json.load(f)
 SERIAL_PORT = CONFIG.get("serial", {}).get("port") or serial_relay.DEFAULT_PORT
 SERIAL_BAUD = CONFIG.get("serial", {}).get("baud") or serial_relay.DEFAULT_BAUD
+badge_mqtt.init_mqtt(CONFIG)
 
 
 @app.route("/")
@@ -36,6 +38,11 @@ def api_serial_open():
         port = request.json.get("port", SERIAL_PORT) if request.json else SERIAL_PORT
         baud = request.json.get("baud", SERIAL_BAUD) if request.json else SERIAL_BAUD
         serial_relay.open(port=port, baud=baud)
+        try:
+            import alert_email
+            alert_email.reset_alert_sent()
+        except Exception:
+            pass
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -84,6 +91,19 @@ def api_relay_state():
         if state is None:
             return jsonify({"ok": False, "error": "no response"}), 500
         return jsonify({"ok": True, "state": state})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ---------- 배지(RS485) API (그래프용) ----------
+@app.route("/api/badge/history")
+def api_badge_history():
+    limit = request.args.get("limit", 100, type=int)
+    if limit <= 0 or limit > 500:
+        limit = 100
+    try:
+        data = badge_mqtt.get_badge_history(limit=limit)
+        return jsonify({"ok": True, "history": data})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -144,6 +164,7 @@ def main():
         app.run(host="0.0.0.0", port=5000, debug=False)
     finally:
         scheduler_service.stop_scheduler()
+        badge_mqtt.close_mqtt()
         serial_relay.close()
 
 

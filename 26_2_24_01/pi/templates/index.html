@@ -53,6 +53,14 @@
     </div>
   </section>
 
+  <section class="badge-section">
+    <h2>RS485 배지 데이터 (그래프)</h2>
+    <div class="badge-chart-wrap">
+      <canvas id="badgeChart" width="400" height="200"></canvas>
+    </div>
+    <p class="badge-hint">시리얼 연결 시 아두이노를 통해 수신한 배지 데이터가 표시됩니다.</p>
+  </section>
+
   <section class="schedule-section">
     <h2>스케줄 (채널당 최대 10개, 작동 순서대로 정렬)</h2>
     <div class="schedule-channels">
@@ -93,6 +101,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

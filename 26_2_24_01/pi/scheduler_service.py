@@ -50,8 +50,24 @@ def _run_schedules():
                 except Exception:
                     pass
 
+def _poll_badge():
+    try:
+        import badge_mqtt
+        badge_mqtt.process_pending_badge_lines()
+    except Exception:
+        pass
+
+def _check_disconnect_alert():
+    try:
+        import alert_email
+        alert_email.check_disconnect_and_alert()
+    except Exception:
+        pass
+
 def start_scheduler():
     scheduler.add_job(_run_schedules, IntervalTrigger(minutes=1), id="relay_schedule")
+    scheduler.add_job(_poll_badge, IntervalTrigger(seconds=1), id="badge_poll")
+    scheduler.add_job(_check_disconnect_alert, IntervalTrigger(minutes=1), id="disconnect_alert")
     scheduler.start()
 
 def stop_scheduler():

@@ -148,6 +148,59 @@
     });
   });
 
+  // 배지 그래프 (Chart.js)
+  let badgeChart = null;
+  async function refreshBadgeChart() {
+    try {
+      const r = await fetch('/api/badge/history?limit=80');
+      const j = await r.json();
+      if (!j.ok || !j.history || !j.history.length) {
+        if (badgeChart) {
+          badgeChart.data.labels = [];
+          badgeChart.data.datasets[0].data = [];
+          badgeChart.update('none');
+        }
+        return;
+      }
+      const hist = j.history;
+      const labels = hist.map((d) => {
+        const dt = new Date(d.t * 1000);
+        return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      });
+      const data = hist.map((_, i) => i + 1);
+      if (!badgeChart) {
+        const ctx = document.getElementById('badgeChart');
+        if (!ctx) return;
+        badgeChart = new Chart(ctx.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '배지 수신 순서',
+              data: data,
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1,
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { display: true, title: { display: true, text: '시각' } },
+              y: { display: true, title: { display: true, text: '건수' }, min: 0 }
+            }
+          }
+        });
+      } else {
+        badgeChart.data.labels = labels;
+        badgeChart.data.datasets[0].data = data;
+        badgeChart.update('none');
+      }
+    } catch (_) {}
+  }
+  setInterval(refreshBadgeChart, 5000);
+  refreshBadgeChart();
+
   fetchSerialStatus();
   loadSchedules();
   setInterval(refreshState, 3000);

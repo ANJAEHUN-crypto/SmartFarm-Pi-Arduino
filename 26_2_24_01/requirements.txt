@@ -2,6 +2,7 @@
 Flask>=3.0.0
 pyserial>=3.5
 APScheduler>=3.10.0
+paho-mqtt>=2.0.0
 
 # 캠 촬영 (Pi Camera 또는 USB 캠)
 # picamera2  # 라즈베리파이 공식 카메라
