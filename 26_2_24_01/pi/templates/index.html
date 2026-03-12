@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>스마트팜 제어</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>스마트팜 제어</h1>
+    <div class="serial-status">
+      시리얼: <span id="serialStatus">연결 안 됨</span>
+      <button type="button" id="btnSerialToggle">연결</button>
+    </div>
+  </header>
+
+  <section class="relay-section">
+    <h2>릴레이 원격 ON/OFF</h2>
+    <div class="relay-grid">
+      <div class="relay-card" data-ch="1">
+        <span class="label">1ch LED1</span>
+        <div class="state" id="state1">-</div>
+        <div class="btns">
+          <button type="button" class="on">ON</button>
+          <button type="button" class="off">OFF</button>
+        </div>
+      </div>
+      <div class="relay-card" data-ch="2">
+        <span class="label">2ch PUMP1</span>
+        <div class="state" id="state2">-</div>
+        <div class="btns">
+          <button type="button" class="on">ON</button>
+          <button type="button" class="off">OFF</button>
+        </div>
+      </div>
+      <div class="relay-card" data-ch="3">
+        <span class="label">3ch LED2</span>
+        <div class="state" id="state3">-</div>
+        <div class="btns">
+          <button type="button" class="on">ON</button>
+          <button type="button" class="off">OFF</button>
+        </div>
+      </div>
+      <div class="relay-card" data-ch="4">
+        <span class="label">4ch PUMP2</span>
+        <div class="state" id="state4">-</div>
+        <div class="btns">
+          <button type="button" class="on">ON</button>
+          <button type="button" class="off">OFF</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="schedule-section">
+    <h2>스케줄 (채널당 최대 10개, 작동 순서대로 정렬)</h2>
+    <div class="schedule-channels">
+      <div class="channel-block" data-ch="1">
+        <h3>1ch LED1</h3>
+        <ul class="schedule-list" id="list1"></ul>
+        <button type="button" class="add-schedule" data-ch="1">+ 스케줄 추가</button>
+      </div>
+      <div class="channel-block" data-ch="2">
+        <h3>2ch PUMP1</h3>
+        <ul class="schedule-list" id="list2"></ul>
+        <button type="button" class="add-schedule" data-ch="2">+ 스케줄 추가</button>
+      </div>
+      <div class="channel-block" data-ch="3">
+        <h3>3ch LED2</h3>
+        <ul class="schedule-list" id="list3"></ul>
+        <button type="button" class="add-schedule" data-ch="3">+ 스케줄 추가</button>
+      </div>
+      <div class="channel-block" data-ch="4">
+        <h3>4ch PUMP2</h3>
+        <ul class="schedule-list" id="list4"></ul>
+        <button type="button" class="add-schedule" data-ch="4">+ 스케줄 추가</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>스케줄 설정</h3>
+      <p>채널: <span id="modalCh"></span></p>
+      <label>ON 시각 <input type="time" id="onTime" value="09:00"></label>
+      <label>OFF 시각 <input type="time" id="offTime" value="18:00"></label>
+      <label>요일 <input type="text" id="days" placeholder="daily 또는 0,1,2 (월화수)" value="daily"></label>
+      <div class="modal-btns">
+        <button type="button" id="modalSave">저장</button>
+        <button type="button" id="modalCancel">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

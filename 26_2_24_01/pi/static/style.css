@@ -1,0 +1,37 @@
+* { box-sizing: border-box; }
+body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 1rem; background: #f5f5f5; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+h1 { margin: 0; font-size: 1.5rem; }
+.serial-status { display: flex; align-items: center; gap: 0.5rem; }
+#serialStatus { font-weight: bold; color: #666; }
+#serialStatus.connected { color: #0a0; }
+#btnSerialToggle { padding: 0.4rem 0.8rem; cursor: pointer; }
+
+.relay-section, .schedule-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.relay-section h2, .schedule-section h2 { margin-top: 0; font-size: 1.1rem; }
+.relay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+.relay-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
+.relay-card .label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
+.relay-card .state { margin: 0.5rem 0; font-size: 1.2rem; }
+.relay-card .state.on { color: #0a0; }
+.relay-card .state.off { color: #c00; }
+.relay-card .btns { display: flex; gap: 0.5rem; justify-content: center; }
+.relay-card .btns button { padding: 0.4rem 0.8rem; cursor: pointer; }
+.relay-card .btns .on { background: #0a0; color: #fff; border: none; border-radius: 4px; }
+.relay-card .btns .off { background: #c00; color: #fff; border: none; border-radius: 4px; }
+
+.schedule-channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.channel-block { border: 1px solid #eee; border-radius: 8px; padding: 1rem; }
+.channel-block h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
+.schedule-list { list-style: none; padding: 0; margin: 0 0 0.5rem 0; max-height: 200px; overflow-y: auto; }
+.schedule-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+.schedule-list li .del { cursor: pointer; color: #c00; }
+.add-schedule { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal.hidden { display: none; }
+.modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; min-width: 280px; }
+.modal-content label { display: block; margin: 0.5rem 0; }
+.modal-content input[type=time], .modal-content input[type=text] { width: 100%; padding: 0.4rem; }
+.modal-btns { margin-top: 1rem; display: flex; gap: 0.5rem; }
+.modal-btns button { padding: 0.5rem 1rem; cursor: pointer; }

@@ -1,0 +1,11 @@
+{
+  "serial": {
+    "port": "/dev/ttyACM0",
+    "baud": 9600
+  },
+  "camera": {
+    "enabled": false,
+    "interval_seconds": 3600,
+    "save_dir": "data/photos"
+  }
+}
