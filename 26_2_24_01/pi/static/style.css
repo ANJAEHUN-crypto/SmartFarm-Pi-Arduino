@@ -29,6 +29,10 @@ h1 { margin: 0; font-size: 1.5rem; }
 .schedule-channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .channel-block { border: 1px solid #eee; border-radius: 8px; padding: 1rem; }
 .channel-block h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
+.schedule-day-filters { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.5rem; }
+.schedule-day-filters .day-filter { padding: 0.25rem 0.5rem; font-size: 0.8rem; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+.schedule-day-filters .day-filter:hover { background: #f0f0f0; }
+.schedule-day-filters .day-filter.active { background: #07c; color: #fff; border-color: #07c; }
 .schedule-list { list-style: none; padding: 0; margin: 0 0 0.5rem 0; max-height: 200px; overflow-y: auto; }
 .schedule-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 .schedule-list li .del { cursor: pointer; color: #c00; }

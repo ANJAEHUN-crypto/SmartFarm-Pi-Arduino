@@ -85,6 +85,25 @@
 
 ---
 
+## 8차 배포 (요일별 스케줄 + 영문 요일 + 20개 확대 + 토양 센서 10분 송신)
+
+- **아두이노**
+  - 토양 센서 BADGE JSON 송신 주기: **3초 → 10분**(`sensorInterval = 600000` ms)으로 변경
+- **스케줄 요일 표현**
+  - `days` 필드를 `Mon,Tue,Wed,Thu,Fri,Sat,Sun` 영문 약어 콤마 구분으로 사용 (매일은 `daily`)
+  - 기존 숫자 요일(0,1,2) 형식도 백엔드에서 그대로 인식, 저장 시 영문으로 정규화 가능
+- **화면에서의 요일별 보기**
+  - 채널별로 `All / Mon / Tue / Wed / Thu / Fri / Sat / Sun` 필터 버튼 제공
+  - `All`: 전체 스케줄, 특정 요일: 해당 요일이 포함된 스케줄만 리스트에 표시
+  - 스케줄 추가 시, 선택된 요일을 기본값으로 `days`에 채워 넣고 사용자가 필요 시 `Mon,Thu` 등으로 수정 가능
+- **시간 형식 통일**
+  - 스케줄 리스트 및 모달 표기를 24시간 `HH:MM`(예: `00:00`, `09:05`, `23:59`) 형식으로 통일
+- **채널당 최대 스케줄 수 상향**
+  - 채널당 스케줄 최대 개수를 10개 → **20개**로 확대 (`schedule_store.MAX_PER_CHANNEL`, 프론트 검증)
+- **수정 파일**: `arduino/.../smart_farm_relay.ino`, `pi/schedule_store.py`, `pi/scheduler_service.py`, `pi/templates/index.html`, `pi/static/app.js`, `pi/static/style.css`, `PATCH.md`, `patch/08.md`, `patch/README.md`
+
+---
+
 ## 참고
 
 - 배포 후 Pi: `cd /home/pi/SmartFarm-Pi-Arduino && git pull origin main`  

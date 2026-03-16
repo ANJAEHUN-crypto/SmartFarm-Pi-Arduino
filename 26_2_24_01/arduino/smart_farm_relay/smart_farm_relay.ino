@@ -7,7 +7,7 @@
  *
  * 프로토콜 (USB 시리얼): 한 줄 단위
  *   ON 1 ~ ON 4  / OFF 1 ~ OFF 4  / STATE → "S 0 1 0 1"
- * 센서 데이터: 3초마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
+ * 센서 데이터: 10분마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
  */
 
 #include <SoftwareSerial.h>
@@ -33,7 +33,7 @@ int soil_ec = 0;
 float soil_ph = 0;
 
 unsigned long sensorTimer = 0;
-const unsigned long sensorInterval = 3000;
+const unsigned long sensorInterval = 600000;  // 10분 = 10 * 60 * 1000 ms
 
 int readSensor(byte *cmd) {
   while (rs485.available()) rs485.read();

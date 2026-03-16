@@ -2,7 +2,7 @@
 """
 스마트팜 웹 서버 (라즈베리파이)
 - 릴레이 원격 ON/OFF
-- 채널당 스케줄 최대 10개, 작동 순서 정렬
+- 채널당 스케줄 최대 20개, 작동 순서 정렬
 """
 import os
 import json
@@ -111,7 +111,7 @@ def api_badge_history():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-# ---------- 스케줄 API (채널당 10개, 작동 순서 정렬) ----------
+# ---------- 스케줄 API (채널당 20개, 작동 순서 정렬) ----------
 @app.route("/api/schedules", methods=["GET"])
 def api_schedules_get():
     data = schedule_store.get_all()

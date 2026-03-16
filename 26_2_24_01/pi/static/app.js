@@ -10,6 +10,39 @@
   const modalCancel = document.getElementById('modalCancel');
 
   let scheduleEdit = { channel: null, index: null };
+  let lastScheduleData = { schedules: {} };
+  const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const selectedDayByCh = { 1: 'All', 2: 'All', 3: 'All', 4: 'All' };
+
+  function formatTime(t) {
+    if (!t) return '00:00';
+    const parts = String(t).trim().split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+    return (isNaN(h) ? '00' : String(h).padStart(2, '0')) + ':' + (isNaN(m) ? '00' : String(m).padStart(2, '0'));
+  }
+
+  function formatDays(days) {
+    if (!days || days === 'daily') return 'daily';
+    return String(days).split(',').map(function (p) {
+      const x = p.trim();
+      if (/^[0-6]$/.test(x)) return DAY_NAMES[parseInt(x, 10)];
+      return x;
+    }).join(',');
+  }
+
+  function scheduleMatchesDay(s, dayFilter) {
+    if (dayFilter === 'All') return true;
+    const d = (s && s.days) ? String(s.days).trim() : '';
+    if (!d || d === 'daily') return true;
+    const parts = d.split(',').map(function (p) { return p.trim(); });
+    const dayIndex = DAY_NAMES.indexOf(dayFilter);
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i] === dayFilter) return true;
+      if (parts[i] === String(dayIndex)) return true;
+    }
+    return false;
+  }
 
   function setSerialStatus(open) {
     serialStatus.textContent = open ? '연결됨' : '연결 안 됨';
@@ -76,16 +109,23 @@
   });
 
   function renderSchedules(data) {
+    lastScheduleData = data || lastScheduleData;
+    const schedules = lastScheduleData.schedules || {};
     [1, 2, 3, 4].forEach(ch => {
       const list = document.getElementById('list' + ch);
       if (!list) return;
-      const arr = data.schedules && data.schedules[ch] ? data.schedules[ch] : [];
-      list.innerHTML = arr.map((s, idx) =>
-        '<li>' +
-        '<span>' + s.on_time + ' ON → ' + s.off_time + ' OFF ' + (s.days && s.days !== 'daily' ? '(' + s.days + ')' : '') + '</span>' +
-        '<span class="del" data-ch="' + ch + '" data-idx="' + idx + '">삭제</span>' +
-        '</li>'
-      );
+      const fullArr = schedules[ch] || [];
+      const dayFilter = selectedDayByCh[ch] || 'All';
+      const filtered = fullArr.map(function (s, idx) { return { s: s, idx: idx }; }).filter(function (x) { return scheduleMatchesDay(x.s, dayFilter); });
+      list.innerHTML = filtered.map(function (x) {
+        const onT = formatTime(x.s.on_time);
+        const offT = formatTime(x.s.off_time);
+        const daysLabel = formatDays(x.s.days);
+        return '<li>' +
+          '<span>' + onT + ' ON → ' + offT + ' OFF ' + (daysLabel !== 'daily' ? '(' + daysLabel + ')' : '') + '</span>' +
+          '<span class="del" data-ch="' + ch + '" data-idx="' + x.idx + '">삭제</span>' +
+          '</li>';
+      });
       list.querySelectorAll('.del').forEach(span => {
         span.addEventListener('click', () => deleteSchedule(parseInt(span.dataset.ch, 10), parseInt(span.dataset.idx, 10)));
       });
@@ -96,7 +136,10 @@
     try {
       const r = await fetch('/api/schedules');
       const j = await r.json();
-      if (j.ok) renderSchedules(j);
+      if (j.ok) {
+        lastScheduleData = j;
+        renderSchedules(j);
+      }
     } catch (_) {}
   }
 
@@ -112,9 +155,13 @@
   function openModal(ch, index, item) {
     scheduleEdit = { channel: ch, index: index };
     modalCh.textContent = ch + 'ch';
-    onTime.value = item ? item.on_time : '09:00';
-    offTime.value = item ? item.off_time : '18:00';
-    days.value = item && item.days ? item.days : 'daily';
+    onTime.value = item ? formatTime(item.on_time) : '09:00';
+    offTime.value = item ? formatTime(item.off_time) : '18:00';
+    if (item && item.days) {
+      days.value = formatDays(item.days) === 'daily' ? 'daily' : formatDays(item.days);
+    } else {
+      days.value = selectedDayByCh[ch] === 'All' ? 'daily' : selectedDayByCh[ch];
+    }
     modal.classList.remove('hidden');
   }
 
@@ -122,7 +169,15 @@
   modalSave.addEventListener('click', async () => {
     const ch = scheduleEdit.channel;
     const idx = scheduleEdit.index;
-    const body = { on_time: onTime.value, off_time: offTime.value, days: days.value || 'daily' };
+    let daysVal = (days.value || '').trim() || 'daily';
+    if (daysVal !== 'daily') {
+      daysVal = daysVal.split(',').map(function (p) {
+        const x = p.trim();
+        if (/^[0-6]$/.test(x)) return DAY_NAMES[parseInt(x, 10)];
+        return x;
+      }).join(',');
+    }
+    const body = { on_time: formatTime(onTime.value), off_time: formatTime(offTime.value), days: daysVal };
     try {
       if (idx === null) {
         const r = await fetch('/api/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: ch, ...body }) });
@@ -141,10 +196,22 @@
   document.querySelectorAll('.add-schedule').forEach(btn => {
     btn.addEventListener('click', () => {
       const ch = parseInt(btn.dataset.ch, 10);
-      const list = document.getElementById('list' + ch);
-      const count = list ? list.querySelectorAll('li').length : 0;
-      if (count >= 10) { alert('채널당 최대 10개까지 가능합니다.'); return; }
+      const count = (lastScheduleData.schedules && lastScheduleData.schedules[ch]) ? lastScheduleData.schedules[ch].length : 0;
+      if (count >= 20) { alert('채널당 최대 20개까지 가능합니다.'); return; }
       openModal(ch, null, null);
+    });
+  });
+
+  document.querySelectorAll('.schedule-day-filters').forEach(container => {
+    const ch = parseInt(container.dataset.ch, 10);
+    container.querySelectorAll('.day-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const day = btn.dataset.day;
+        selectedDayByCh[ch] = day;
+        container.querySelectorAll('.day-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderSchedules();
+      });
     });
   });
 

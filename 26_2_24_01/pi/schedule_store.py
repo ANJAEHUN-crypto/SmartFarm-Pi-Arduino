@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-채널당 최대 10개 스케줄 저장/로드. 작동 순서(시작 시각) 기준 정렬.
+채널당 최대 20개 스케줄 저장/로드. 작동 순서(시작 시각) 기준 정렬.
 형식: { "channel": 1~4, "on_time": "HH:MM", "off_time": "HH:MM", "days": "0-6" 또는 "daily" }
 """
 import json
@@ -9,7 +9,7 @@ from datetime import datetime
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 SCHEDULES_FILE = os.path.join(DATA_DIR, "schedules.json")
-MAX_PER_CHANNEL = 10
+MAX_PER_CHANNEL = 20
 
 def _ensure_data_dir():
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -58,7 +58,7 @@ def add(channel, on_time, off_time, days="daily"):
     raw = _load_raw()
     lst = raw.get(ch, [])
     if len(lst) >= MAX_PER_CHANNEL:
-        return False, "Max 10 schedules per channel"
+        return False, "Max 20 schedules per channel"
     entry = {
         "channel": int(channel),
         "on_time": on_time,

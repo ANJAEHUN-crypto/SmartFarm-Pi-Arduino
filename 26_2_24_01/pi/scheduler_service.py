@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 스케줄 실행: 매분 현재 시각과 비교해 ON/OFF 전송.
-채널당 10개, 작동 순서(시각)대로 정렬된 스케줄 적용.
+채널당 20개, 작동 순서(시각)대로 정렬된 스케줄 적용.
 """
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -19,11 +19,27 @@ def _weekday():
     return datetime.now().weekday()
 
 def _should_run_today(days):
-    if not days or days == "daily":
+    """days: 'daily' | '0,1,2' (월~일) | 'Mon,Tue,Wed' (영문). 0=월요일, 6=일요일."""
+    if not days or str(days).strip() == "daily":
         return True
+    today = _weekday()  # 0=Mon .. 6=Sun
+    day_names = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     try:
-        allowed = [int(x.strip()) for x in str(days).split(",")]
-        return _weekday() in allowed
+        for part in str(days).split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if part.isdigit():
+                if int(part) == today:
+                    return True
+            else:
+                # 영문 요일 (대소문자 무시)
+                for i, name in enumerate(day_names):
+                    if part.lower() == name.lower():
+                        if i == today:
+                            return True
+                        break
+        return False
     except (ValueError, TypeError):
         return True
 
