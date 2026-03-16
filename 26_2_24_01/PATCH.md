@@ -104,6 +104,28 @@
 
 ---
 
+## 9차 배포 (예정: 요일 체크박스 · NPK 웹 연동 · 카메라/드라이브 통합 · 웹 표시 개선)
+
+- **스케줄 요일 설정형(체크식) 전환**
+  - 스케줄 모달에서 요일을 텍스트로 입력(`daily`, `Mon,Tue,Wed` 등)하는 방식 대신
+    `매일(daily)` 체크박스 + `Mon~Sun` 7개 요일 체크박스로 선택하는 UI로 변경
+  - 저장 시 기존과 동일하게 `daily` 또는 `Mon,Tue,Wed` 형태의 문자열로 변환하여 백엔드와 호환 유지
+- **RS485 NPK 값 웹 연동**
+  - Halisense TH-EC-PH-NPK 센서에서 N·P·K(Modbus 레지스터, 예: 4/5/6) 값을 읽어
+    아두이노 BADGE JSON에 `soil_N`, `soil_P`, `soil_K` 필드로 포함
+  - 기존 Pi/Web 측 NPK 표시 로직(실시간/7일 평균)에 실제 센서 값이 반영되도록 검증
+- **카메라 + Google Drive 업로드 양성화**
+  - `/home/pi/camera_project/camera_capture.py + crontab + rclone` 구조를 SmartFarm 프로젝트의 공식 기능으로 문서화
+  - rpicam-still 촬영 옵션, 로컬 저장 경로(`/home/pi/camera_project/photos`), rclone remote 이름(`ANJAEHUN_SMART_FARM`), 원격 폴더(`SmartFarmPhotos`), crontab 설정(10분마다 촬영/업로드)을 `patch/09.md` 및 README류에 명시
+  - 업로드 성공 시 로컬 사진 파일을 **즉시 삭제**하여 라즈베리파이 저장 공간을 절약하는 정책 반영
+  - 필요 시 `config.json`의 `camera` 섹션과 연동하는 방향 검토
+- **웹 표시 개선**
+  - 상단 토양 센서 카드와 스케줄 표 사이에 “카메라 촬영/업로드 상태” 표시 영역 추가  
+    - 예: `00:00 촬영 및 드라이브 업로드 완료`, `00:10 촬영 실패`, `00:20 업로드 실패` 등
+  - 스케줄 표의 시간/날짜 X축 텍스트를 한 줄에 보이도록 줄바꿈/레이아웃 조정 및 글자 크기 확대로 가독성 향상
+
+---
+
 ## 참고
 
 - 배포 후 Pi: `cd /home/pi/SmartFarm-Pi-Arduino && git pull origin main`  

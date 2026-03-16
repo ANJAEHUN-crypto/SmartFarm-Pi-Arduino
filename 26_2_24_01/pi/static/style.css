@@ -38,6 +38,17 @@ h1 { margin: 0; font-size: 1.5rem; }
 .schedule-list li .del { cursor: pointer; color: #c00; }
 .add-schedule { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; }
 
+.camera-status-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.camera-status-section h2 { margin-top: 0; font-size: 1.1rem; }
+.camera-status-section p { margin: 0.25rem 0 0 0; font-size: 0.95rem; color: #333; }
+
+.schedule-list li span:first-child { white-space: nowrap; font-size: 1rem; }
+
+.days-input-group { margin-top: 0.5rem; }
+.days-input-label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 0.25rem; }
+.days-input-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+.days-input-item { font-size: 0.85rem; margin-right: 0.5rem; }
+
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 10; }
 .modal.hidden { display: none; }
 .modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; min-width: 280px; }

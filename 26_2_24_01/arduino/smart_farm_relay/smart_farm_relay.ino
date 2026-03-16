@@ -31,9 +31,29 @@ float soil_temperature = 0;
 float soil_humidity = 0;
 int soil_ec = 0;
 float soil_ph = 0;
+int soil_N = 0;
+int soil_P = 0;
+int soil_K = 0;
 
 unsigned long sensorTimer = 0;
 const unsigned long sensorInterval = 600000;  // 10분 = 10 * 60 * 1000 ms
+
+// Modbus CRC16 계산 (표준 다항식 0xA001)
+unsigned int modbusCRC16(byte *buf, int len) {
+  unsigned int crc = 0xFFFF;
+  for (int pos = 0; pos < len; pos++) {
+    crc ^= (unsigned int)buf[pos];
+    for (int i = 0; i < 8; i++) {
+      if (crc & 0x0001) {
+        crc >>= 1;
+        crc ^= 0xA001;
+      } else {
+        crc >>= 1;
+      }
+    }
+  }
+  return crc;
+}
 
 int readSensor(byte *cmd) {
   while (rs485.available()) rs485.read();
@@ -61,11 +81,33 @@ int readSensor(byte *cmd) {
   return -1;
 }
 
+int readRegister(unsigned int regAddr) {
+  byte cmd[8];
+  cmd[0] = 0x01;                    // 슬레이브 주소
+  cmd[1] = 0x03;                    // 기능 코드 (Holding Register 읽기)
+  cmd[2] = highByte(regAddr);       // 시작 레지스터 주소 High
+  cmd[3] = lowByte(regAddr);        // 시작 레지스터 주소 Low
+  cmd[4] = 0x00;                    // 레지스터 개수 High
+  cmd[5] = 0x01;                    // 레지스터 개수 Low (1개)
+  unsigned int crc = modbusCRC16(cmd, 6);
+  cmd[6] = lowByte(crc);
+  cmd[7] = highByte(crc);
+  return readSensor(cmd);
+}
+
 void readAllSensors() {
   soil_temperature = readSensor(cmd_temp) / 10.0f;
   soil_humidity = readSensor(cmd_humi) / 10.0f;
   soil_ec = readSensor(cmd_ec);
   soil_ph = readSensor(cmd_ph) / 10.0f;
+
+  // Halisense TH-EC-PH-NPK 센서의 N/P/K 레지스터는 장치 매뉴얼 기준으로 조정 필요
+  int nVal = readRegister(4);  // 예: 레지스터 4 = N
+  int pVal = readRegister(5);  // 예: 레지스터 5 = P
+  int kVal = readRegister(6);  // 예: 레지스터 6 = K
+  if (nVal >= 0) soil_N = nVal;
+  if (pVal >= 0) soil_P = pVal;
+  if (kVal >= 0) soil_K = kVal;
 
   // Pi가 "BADGE " 로 시작하는 줄만 배지/센서 데이터로 수집 → JSON 유지
   Serial.print("BADGE {\"status\":\"success\",");
@@ -77,6 +119,12 @@ void readAllSensors() {
   Serial.print(soil_ec);
   Serial.print(",\"soil_ph\":");
   Serial.print(soil_ph);
+  Serial.print(",\"soil_N\":");
+  Serial.print(soil_N);
+  Serial.print(",\"soil_P\":");
+  Serial.print(soil_P);
+  Serial.print(",\"soil_K\":");
+  Serial.print(soil_K);
   Serial.println("}");
 }
 

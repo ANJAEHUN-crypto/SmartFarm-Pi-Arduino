@@ -111,6 +111,34 @@ def api_badge_history():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+@app.route("/api/camera/status")
+def api_camera_status():
+    """카메라 프로젝트(별도 스크립트)의 최근 촬영/업로드 상태 단순 표시용."""
+    photos_dir = "/home/pi/camera_project/photos"
+    status_file = "/home/pi/camera_project/camera_status.json"
+    try:
+        # 우선 status 파일이 있으면 그대로 사용
+        if os.path.exists(status_file):
+            with open(status_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return jsonify({"ok": True, "source": "status_file", "data": data})
+        # 없으면 사진 디렉터리의 최신 파일 기준으로 간단히 표시
+        if not os.path.isdir(photos_dir):
+            return jsonify({"ok": True, "source": "none", "message": "카메라 프로젝트 폴더가 없습니다."})
+        files = [os.path.join(photos_dir, f) for f in os.listdir(photos_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+        if not files:
+            return jsonify({"ok": True, "source": "none", "message": "저장된 촬영 이미지가 없습니다."})
+        latest = max(files, key=os.path.getmtime)
+        ts = os.path.getmtime(latest)
+        from datetime import datetime
+        dt = datetime.fromtimestamp(ts)
+        time_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+        msg = f"마지막 촬영 파일: {os.path.basename(latest)} (저장 시각: {time_str})"
+        return jsonify({"ok": True, "source": "files", "message": msg, "time": time_str})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 # ---------- 스케줄 API (채널당 20개, 작동 순서 정렬) ----------
 @app.route("/api/schedules", methods=["GET"])
 def api_schedules_get():

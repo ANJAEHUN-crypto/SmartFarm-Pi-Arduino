@@ -5,14 +5,31 @@
   const modalCh = document.getElementById('modalCh');
   const onTime = document.getElementById('onTime');
   const offTime = document.getElementById('offTime');
-  const days = document.getElementById('days');
   const modalSave = document.getElementById('modalSave');
   const modalCancel = document.getElementById('modalCancel');
+  const dayDaily = document.getElementById('dayDaily');
+  const dayMon = document.getElementById('dayMon');
+  const dayTue = document.getElementById('dayTue');
+  const dayWed = document.getElementById('dayWed');
+  const dayThu = document.getElementById('dayThu');
+  const dayFri = document.getElementById('dayFri');
+  const daySat = document.getElementById('daySat');
+  const daySun = document.getElementById('daySun');
 
   let scheduleEdit = { channel: null, index: null };
   let lastScheduleData = { schedules: {} };
   const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const selectedDayByCh = { 1: 'All', 2: 'All', 3: 'All', 4: 'All' };
+
+  const dayCheckboxMap = {
+    Mon: dayMon,
+    Tue: dayTue,
+    Wed: dayWed,
+    Thu: dayThu,
+    Fri: dayFri,
+    Sat: daySat,
+    Sun: daySun
+  };
 
   function formatTime(t) {
     if (!t) return '00:00';
@@ -42,6 +59,45 @@
       if (parts[i] === String(dayIndex)) return true;
     }
     return false;
+  }
+
+  function setDayInputsFromDaysString(daysStr, ch) {
+    // 기본: 모두 해제
+    if (dayDaily) dayDaily.checked = false;
+    DAY_NAMES.forEach(function (name) {
+      const cb = dayCheckboxMap[name];
+      if (cb) cb.checked = false;
+    });
+    const d = (daysStr && String(daysStr).trim()) || '';
+    if (!d || d === 'daily') {
+      if (dayDaily) dayDaily.checked = true;
+      return;
+    }
+    const parts = d.split(',').map(function (p) { return p.trim(); }).filter(Boolean);
+    parts.forEach(function (p) {
+      let name = p;
+      if (/^[0-6]$/.test(p)) {
+        const idx = parseInt(p, 10);
+        if (idx >= 0 && idx < DAY_NAMES.length) name = DAY_NAMES[idx];
+      }
+      const cb = dayCheckboxMap[name];
+      if (cb) cb.checked = true;
+    });
+  }
+
+  function getDaysStringFromInputs() {
+    if (dayDaily && dayDaily.checked) {
+      return 'daily';
+    }
+    const selected = DAY_NAMES.filter(function (name) {
+      const cb = dayCheckboxMap[name];
+      return cb && cb.checked;
+    });
+    if (!selected.length) {
+      // 아무 것도 선택 안 한 경우 기본값: daily
+      return 'daily';
+    }
+    return selected.join(',');
   }
 
   function setSerialStatus(open) {
@@ -157,11 +213,10 @@
     modalCh.textContent = ch + 'ch';
     onTime.value = item ? formatTime(item.on_time) : '09:00';
     offTime.value = item ? formatTime(item.off_time) : '18:00';
-    if (item && item.days) {
-      days.value = formatDays(item.days) === 'daily' ? 'daily' : formatDays(item.days);
-    } else {
-      days.value = selectedDayByCh[ch] === 'All' ? 'daily' : selectedDayByCh[ch];
-    }
+    const baseDays = item && item.days
+      ? item.days
+      : (selectedDayByCh[ch] === 'All' ? 'daily' : selectedDayByCh[ch]);
+    setDayInputsFromDaysString(baseDays, ch);
     modal.classList.remove('hidden');
   }
 
@@ -169,14 +224,7 @@
   modalSave.addEventListener('click', async () => {
     const ch = scheduleEdit.channel;
     const idx = scheduleEdit.index;
-    let daysVal = (days.value || '').trim() || 'daily';
-    if (daysVal !== 'daily') {
-      daysVal = daysVal.split(',').map(function (p) {
-        const x = p.trim();
-        if (/^[0-6]$/.test(x)) return DAY_NAMES[parseInt(x, 10)];
-        return x;
-      }).join(',');
-    }
+    const daysVal = getDaysStringFromInputs();
     const body = { on_time: formatTime(onTime.value), off_time: formatTime(offTime.value), days: daysVal };
     try {
       if (idx === null) {
@@ -276,6 +324,34 @@
   }
   setInterval(refreshBadgeValues, 5000);
   refreshBadgeValues();
+
+  async function refreshCameraStatus() {
+    try {
+      const el = document.getElementById('cameraStatusText');
+      if (!el) return;
+      const r = await fetch('/api/camera/status');
+      const j = await r.json();
+      if (!j.ok) {
+        el.textContent = j.error || '카메라 상태 조회 실패';
+        return;
+      }
+      if (j.data && j.source === 'status_file') {
+        // camera_status.json 형식에 맞게 간단 표시
+        const msg = j.data.message || JSON.stringify(j.data);
+        el.textContent = msg;
+      } else if (j.source === 'files') {
+        el.textContent = j.message || '마지막 촬영 파일 정보 없음';
+      } else {
+        el.textContent = j.message || '카메라 상태 정보가 없습니다.';
+      }
+    } catch (e) {
+      const el = document.getElementById('cameraStatusText');
+      if (el) el.textContent = '카메라 상태 조회 중 오류가 발생했습니다.';
+    }
+  }
+
+  refreshCameraStatus();
+  setInterval(refreshCameraStatus, 60000);
 
   fetchSerialStatus();
   loadSchedules();

@@ -95,6 +95,11 @@
     </div>
   </section>
 
+  <section class="camera-status-section">
+    <h2>카메라 상태</h2>
+    <p id="cameraStatusText">최근 촬영·업로드 상태를 불러오는 중...</p>
+  </section>
+
   <section class="schedule-section">
     <h2>스케줄 (채널당 최대 20개, All / 요일별 보기, 00:00~24:00)</h2>
     <div class="schedule-channels">
@@ -167,7 +172,21 @@
       <p>채널: <span id="modalCh"></span></p>
       <label>ON 시각 <input type="time" id="onTime" value="09:00"></label>
       <label>OFF 시각 <input type="time" id="offTime" value="18:00"></label>
-      <label>요일 <input type="text" id="days" placeholder="daily or Mon,Tue,Wed" value="daily"></label>
+      <div class="days-input-group">
+        <span class="days-input-label">요일</span>
+        <label class="days-input-item">
+          <input type="checkbox" id="dayDaily"> 매일 (daily)
+        </label>
+        <div class="days-input-row">
+          <label class="days-input-item"><input type="checkbox" id="dayMon"> Mon</label>
+          <label class="days-input-item"><input type="checkbox" id="dayTue"> Tue</label>
+          <label class="days-input-item"><input type="checkbox" id="dayWed"> Wed</label>
+          <label class="days-input-item"><input type="checkbox" id="dayThu"> Thu</label>
+          <label class="days-input-item"><input type="checkbox" id="dayFri"> Fri</label>
+          <label class="days-input-item"><input type="checkbox" id="daySat"> Sat</label>
+          <label class="days-input-item"><input type="checkbox" id="daySun"> Sun</label>
+        </div>
+      </div>
       <div class="modal-btns">
         <button type="button" id="modalSave">저장</button>
         <button type="button" id="modalCancel">취소</button>
