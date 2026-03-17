@@ -52,7 +52,7 @@ def _get_exposure_profile(now=None):
         now = datetime.now()
     h = now.hour
     if 6 <= h < 18:
-        return {"shutter": 12000, "gain": 1.0, "ev": 0, "awb": "auto"}
+        return {"shutter": 3000, "gain": 1.0, "ev": -2, "awb": "auto"}
     if (5 <= h < 6) or (18 <= h < 22):
         return {"shutter": 33000, "gain": 1.5, "ev": 1, "awb": "fluorescent"}
     return {"shutter": 66000, "gain": 2.0, "ev": 2, "awb": "incandescent"}
