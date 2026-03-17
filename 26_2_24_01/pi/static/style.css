@@ -41,10 +41,12 @@ h1 { margin: 0; font-size: 1.5rem; }
 .camera-status-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .camera-status-section h2 { margin-top: 0; font-size: 1.1rem; }
 .camera-status-section p { margin: 0.25rem 0 0 0; font-size: 0.95rem; color: #333; }
-.camera-capture-once { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; text-align: center; background: #fafafa; }
+/* 11차: 촬영·업로드 칸을 릴레이 1ch 분량으로 제한 (relay-card와 동일 minmax 기준) */
+.camera-capture-once-wrapper { display: grid; grid-template-columns: repeat(1, minmax(160px, 160px)); margin-top: 0.75rem; }
+.camera-capture-once { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem 1rem; text-align: center; background: #fafafa; }
 .camera-capture-once .label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
 .camera-capture-hint { font-size: 0.8rem; color: #666; margin: 0 0 0.5rem 0; }
-.camera-capture-once button { padding: 0.5rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; font-size: 0.95rem; }
+.camera-capture-once button { padding: 0.5rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; font-size: 0.95rem; width: 100%; max-width: 100%; }
 .camera-capture-once button:disabled { opacity: 0.7; cursor: not-allowed; }
 .camera-exposure-edit { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
 .camera-exposure-edit h3 { margin: 0 0 0.25rem 0; font-size: 1rem; }

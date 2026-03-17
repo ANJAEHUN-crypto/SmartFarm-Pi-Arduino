@@ -146,6 +146,15 @@
 
 ---
 
+## 11차 배포 (촬영·업로드 칸 UI 개편 + 해상도 1080p)
+
+- **1. UI 개편**: 카메라 상태 섹션의 「촬영 및 업로드」 칸 x축(가로) 폭을 릴레이 ON/OFF 채널 1개 분량(160px)으로 축소. `.camera-capture-once-wrapper` 그리드 1칸 적용.
+- **2. 해상도 개편**: rpicam-still 촬영을 1280×720 → **1920×1080(1080p)** 로 변경하여 가능한 화소 전부 활용.
+- **삭제**: 없음.
+- **상세**: `patch/11.md` 참고.
+
+---
+
 ## 참고
 
 - 배포 후 Pi: `cd /home/pi/SmartFarm-Pi-Arduino && git pull origin main`  
