@@ -116,15 +116,14 @@ def build_status_message(config=None):
     except Exception:
         lines.append("• 센서: 확인 불가")
 
-    # 카메라: 웹에서 수정한 custom_message 우선, 없으면 자동 message
+    # 카메라: camera_status.json message
     try:
         import camera_capture
         status_path = camera_capture.get_status_path(config)
         if os.path.exists(status_path):
             with open(status_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            msg = (data.get("custom_message") or "").strip() or data.get("message", "-")
-            lines.append("• 카메라: {}".format(msg))
+            lines.append("• 카메라: {}".format(data.get("message", "-")))
         else:
             lines.append("• 카메라: 상태 없음")
     except Exception:

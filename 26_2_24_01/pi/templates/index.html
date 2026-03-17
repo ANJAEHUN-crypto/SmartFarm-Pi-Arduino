@@ -60,10 +60,38 @@
   <section class="camera-status-section">
     <h2>카메라 상태</h2>
     <p id="cameraStatusText">최근 촬영·업로드 상태를 불러오는 중...</p>
-    <div class="camera-display-edit">
-      <label>표시 문구 수정 (웹·텔레그램에 표시)</label>
-      <input type="text" id="cameraDisplayInput" placeholder="빈칸이면 자동 촬영 결과 표시" maxlength="200">
-      <button type="button" id="cameraDisplaySave">저장</button>
+    <div class="camera-capture-once">
+      <span class="label">즉시 촬영·업로드</span>
+      <p class="camera-capture-hint">주기와 관계없이 1회 촬영 후 드라이브 업로드</p>
+      <button type="button" id="cameraCaptureOnceBtn">촬영 및 업로드</button>
+    </div>
+    <div class="camera-exposure-edit">
+      <h3>노출·촬영값 (시간대별, 웹에서 수정)</h3>
+      <p class="camera-exposure-hint">낮 06~18시 / 저녁 05~06·18~22시 / 야간 22~05시. shutter(μs), gain, ev, awb.</p>
+      <div class="camera-exposure-grid">
+        <div class="camera-exposure-band" data-band="day">
+          <h4>낮</h4>
+          <label>shutter <input type="number" id="camDayShutter" min="1" step="1"></label>
+          <label>gain <input type="number" id="camDayGain" min="0.1" step="0.1"></label>
+          <label>ev <input type="number" id="camDayEv" step="1"></label>
+          <label>awb <input type="text" id="camDayAwb" placeholder="auto"></label>
+        </div>
+        <div class="camera-exposure-band" data-band="evening">
+          <h4>저녁·새벽</h4>
+          <label>shutter <input type="number" id="camEveShutter" min="1" step="1"></label>
+          <label>gain <input type="number" id="camEveGain" min="0.1" step="0.1"></label>
+          <label>ev <input type="number" id="camEveEv" step="1"></label>
+          <label>awb <input type="text" id="camEveAwb" placeholder="fluorescent"></label>
+        </div>
+        <div class="camera-exposure-band" data-band="night">
+          <h4>야간</h4>
+          <label>shutter <input type="number" id="camNightShutter" min="1" step="1"></label>
+          <label>gain <input type="number" id="camNightGain" min="0.1" step="0.1"></label>
+          <label>ev <input type="number" id="camNightEv" step="1"></label>
+          <label>awb <input type="text" id="camNightAwb" placeholder="incandescent"></label>
+        </div>
+      </div>
+      <button type="button" id="cameraExposureSave">노출값 저장</button>
     </div>
   </section>
 

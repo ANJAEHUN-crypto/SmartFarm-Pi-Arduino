@@ -15,6 +15,13 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
 DEFAULT_PHOTOS_DIR = os.path.join(DATA_DIR, "photos")
 STATUS_FILENAME = "camera_status.json"
+EXPOSURE_SETTINGS_FILENAME = "camera_exposure.json"
+
+DEFAULT_EXPOSURE = {
+    "day": {"shutter": 3000, "gain": 1.0, "ev": -2, "awb": "auto"},
+    "evening": {"shutter": 33000, "gain": 1.5, "ev": 1, "awb": "fluorescent"},
+    "night": {"shutter": 66000, "gain": 2.0, "ev": 2, "awb": "incandescent"},
+}
 
 
 def load_config():
@@ -43,24 +50,61 @@ def get_status_path(config=None):
     return os.path.join(get_photos_dir(config), STATUS_FILENAME)
 
 
-def _get_exposure_profile(now=None):
+def get_exposure_settings_path(config=None):
+    """웹에서 저장한 노출 설정 파일 경로 (data/camera_exposure.json)."""
+    base = os.path.dirname(CONFIG_PATH)
+    data_dir = os.path.join(base, "data")
+    return os.path.join(data_dir, EXPOSURE_SETTINGS_FILENAME)
+
+
+def load_exposure_settings(config=None):
+    """data/camera_exposure.json 로드. 없으면 기본값 복사본 반환."""
+    path = get_exposure_settings_path(config)
+    out = {k: dict(v) for k, v in DEFAULT_EXPOSURE.items()}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+            for band in ("day", "evening", "night"):
+                if isinstance(saved.get(band), dict):
+                    for key in ("shutter", "gain", "ev", "awb"):
+                        if key in saved[band]:
+                            out[band][key] = saved[band][key]
+        except Exception:
+            pass
+    return out
+
+
+def save_exposure_settings(settings, config=None):
+    """웹에서 설정한 노출값 저장."""
+    path = get_exposure_settings_path(config)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(settings, f, ensure_ascii=False, indent=2)
+
+
+def _get_exposure_profile(now=None, config=None):
     """
     현재 시각 기준 노출 프로필 반환.
-    낮(06~18) / 저녁·새벽(05~06, 18~22) / 야간(22~05)
+    웹에서 저장한 값(data/camera_exposure.json) 우선, 없으면 기본값.
+    낮(06~18) / 저녁(05~06, 18~22) / 야간(22~05)
     """
+    bands = load_exposure_settings(config)
     if now is None:
         now = datetime.now()
     h = now.hour
     if 6 <= h < 18:
-        return {"shutter": 3000, "gain": 1.0, "ev": -2, "awb": "auto"}
+        return dict(bands["day"])
     if (5 <= h < 6) or (18 <= h < 22):
-        return {"shutter": 33000, "gain": 1.5, "ev": 1, "awb": "fluorescent"}
-    return {"shutter": 66000, "gain": 2.0, "ev": 2, "awb": "incandescent"}
+        return dict(bands["evening"])
+    return dict(bands["night"])
 
 
 def capture_once_rpicam(save_path, config=None):
-    """rpicam-still로 1장 촬영 (시간대별 노출 적용)."""
-    profile = _get_exposure_profile()
+    """rpicam-still로 1장 촬영 (시간대별 노출 적용, 웹 설정 반영)."""
+    if config is None:
+        config = load_config()
+    profile = _get_exposure_profile(config=config)
     cmd = [
         "rpicam-still",
         "-o", save_path,
@@ -137,7 +181,7 @@ def upload_to_drive(file_path, config=None):
 
 
 def write_status(photos_dir, message, success=True, config=None):
-    """camera_status.json 기록 (웹 API에서 사용). 기존 custom_message는 유지."""
+    """camera_status.json 기록 (웹 API에서 사용)."""
     path = get_status_path(config)
     try:
         os.makedirs(photos_dir, exist_ok=True)
@@ -146,14 +190,6 @@ def write_status(photos_dir, message, success=True, config=None):
             "success": success,
             "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
-        if os.path.exists(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    existing = json.load(f)
-                if existing.get("custom_message") is not None:
-                    data["custom_message"] = existing["custom_message"]
-            except Exception:
-                pass
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:

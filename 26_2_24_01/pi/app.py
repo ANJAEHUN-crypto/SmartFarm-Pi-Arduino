@@ -133,29 +133,53 @@ def api_camera_status():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@app.route("/api/camera/display", methods=["POST"])
-def api_camera_display():
-    """웹에서 카메라 표시 문구 수정. custom_message 저장."""
+@app.route("/api/camera/settings", methods=["GET"])
+def api_camera_settings_get():
+    """웹에서 사용할 카메라 노출 설정 (낮/저녁/야간) 반환."""
     try:
         import camera_capture
-        status_file = camera_capture.get_status_path(CONFIG)
-        photos_dir = camera_capture.get_photos_dir(CONFIG)
+        settings = camera_capture.load_exposure_settings(CONFIG)
+        return jsonify({"ok": True, "settings": settings})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/camera/settings", methods=["POST"])
+def api_camera_settings_post():
+    """웹에서 카메라 노출·촬영값 저장 (낮/저녁/야간 shutter, gain, ev, awb)."""
+    try:
+        import camera_capture
         body = request.json or {}
-        custom_message = (body.get("message") or body.get("custom_message") or "").strip()
-        data = {"message": "", "success": True, "updated": ""}
-        if os.path.exists(status_file):
-            try:
-                with open(status_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception:
-                pass
-        data["custom_message"] = custom_message
-        from datetime import datetime
-        data["display_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        os.makedirs(photos_dir, exist_ok=True)
-        with open(status_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        current = camera_capture.load_exposure_settings(CONFIG)
+        for band in ("day", "evening", "night"):
+            if isinstance(body.get(band), dict):
+                for key in ("shutter", "gain", "ev", "awb"):
+                    if key in body[band]:
+                        val = body[band][key]
+                        if key == "awb":
+                            current[band][key] = str(val)
+                        else:
+                            current[band][key] = int(val) if key in ("shutter", "ev") else float(val)
+        camera_capture.save_exposure_settings(current, CONFIG)
         return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/camera/capture-once", methods=["POST"])
+def api_camera_capture_once():
+    """주기와 관계없이 즉시 1회 촬영 후 드라이브 업로드."""
+    try:
+        import camera_capture
+        camera_capture.main()
+        status_path = camera_capture.get_status_path(CONFIG)
+        message = "촬영 완료"
+        if os.path.exists(status_path):
+            with open(status_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            message = data.get("message", message)
+            return jsonify({"ok": data.get("success", True), "message": message})
+        return jsonify({"ok": True, "message": message})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

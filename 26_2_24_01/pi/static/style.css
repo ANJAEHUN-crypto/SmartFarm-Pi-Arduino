@@ -41,10 +41,20 @@ h1 { margin: 0; font-size: 1.5rem; }
 .camera-status-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .camera-status-section h2 { margin-top: 0; font-size: 1.1rem; }
 .camera-status-section p { margin: 0.25rem 0 0 0; font-size: 0.95rem; color: #333; }
-.camera-display-edit { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
-.camera-display-edit label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
-.camera-display-edit input { width: 100%; max-width: 400px; padding: 0.4rem; margin-right: 0.5rem; }
-.camera-display-edit button { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; margin-top: 0.25rem; }
+.camera-capture-once { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; text-align: center; background: #fafafa; }
+.camera-capture-once .label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
+.camera-capture-hint { font-size: 0.8rem; color: #666; margin: 0 0 0.5rem 0; }
+.camera-capture-once button { padding: 0.5rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; font-size: 0.95rem; }
+.camera-capture-once button:disabled { opacity: 0.7; cursor: not-allowed; }
+.camera-exposure-edit { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
+.camera-exposure-edit h3 { margin: 0 0 0.25rem 0; font-size: 1rem; }
+.camera-exposure-hint { font-size: 0.8rem; color: #666; margin: 0 0 0.5rem 0; }
+.camera-exposure-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem; }
+.camera-exposure-band { background: #f8f8f8; padding: 0.5rem 0.75rem; border-radius: 6px; min-width: 140px; }
+.camera-exposure-band h4 { margin: 0 0 0.35rem 0; font-size: 0.9rem; }
+.camera-exposure-band label { display: block; font-size: 0.8rem; margin-bottom: 0.2rem; }
+.camera-exposure-band input { width: 100%; padding: 0.25rem; box-sizing: border-box; }
+.camera-exposure-edit #cameraExposureSave { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; }
 
 .schedule-list li span:first-child { white-space: nowrap; font-size: 1rem; }
 

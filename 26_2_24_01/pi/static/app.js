@@ -328,7 +328,6 @@
   async function refreshCameraStatus() {
     try {
       const el = document.getElementById('cameraStatusText');
-      const inputEl = document.getElementById('cameraDisplayInput');
       if (!el) return;
       const r = await fetch('/api/camera/status');
       const j = await r.json();
@@ -337,17 +336,11 @@
         return;
       }
       if (j.data && j.source === 'status_file') {
-        const d = j.data;
-        const custom = (d.custom_message || '').trim();
-        const autoMsg = d.message || JSON.stringify(d);
-        el.textContent = custom || autoMsg;
-        if (inputEl) inputEl.value = custom;
+        el.textContent = j.data.message || JSON.stringify(j.data);
       } else if (j.source === 'files') {
         el.textContent = j.message || '마지막 촬영 파일 정보 없음';
-        if (inputEl) inputEl.value = '';
       } else {
         el.textContent = j.message || '카메라 상태 정보가 없습니다.';
-        if (inputEl) inputEl.value = '';
       }
     } catch (e) {
       const el = document.getElementById('cameraStatusText');
@@ -355,30 +348,81 @@
     }
   }
 
-  const cameraDisplaySave = document.getElementById('cameraDisplaySave');
-  if (cameraDisplaySave) {
-    cameraDisplaySave.addEventListener('click', async function () {
-      const inputEl = document.getElementById('cameraDisplayInput');
-      const msg = inputEl ? inputEl.value.trim() : '';
+  const exposureIds = {
+    day: { shutter: 'camDayShutter', gain: 'camDayGain', ev: 'camDayEv', awb: 'camDayAwb' },
+    evening: { shutter: 'camEveShutter', gain: 'camEveGain', ev: 'camEveEv', awb: 'camEveAwb' },
+    night: { shutter: 'camNightShutter', gain: 'camNightGain', ev: 'camNightEv', awb: 'camNightAwb' }
+  };
+  async function loadCameraExposureSettings() {
+    try {
+      const r = await fetch('/api/camera/settings');
+      const j = await r.json();
+      if (!j.ok || !j.settings) return;
+      ['day', 'evening', 'night'].forEach(function (band) {
+        const s = j.settings[band];
+        if (!s) return;
+        const ids = exposureIds[band];
+        if (ids.shutter) { const el = document.getElementById(ids.shutter); if (el) el.value = s.shutter ?? ''; }
+        if (ids.gain) { const el = document.getElementById(ids.gain); if (el) el.value = s.gain ?? ''; }
+        if (ids.ev) { const el = document.getElementById(ids.ev); if (el) el.value = s.ev ?? ''; }
+        if (ids.awb) { const el = document.getElementById(ids.awb); if (el) el.value = s.awb ?? ''; }
+      });
+    } catch (_) {}
+  }
+  const cameraExposureSave = document.getElementById('cameraExposureSave');
+  if (cameraExposureSave) {
+    cameraExposureSave.addEventListener('click', async function () {
+      const settings = { day: {}, evening: {}, night: {} };
+      ['day', 'evening', 'night'].forEach(function (band) {
+        const ids = exposureIds[band];
+        const shutterEl = document.getElementById(ids.shutter);
+        const gainEl = document.getElementById(ids.gain);
+        const evEl = document.getElementById(ids.ev);
+        const awbEl = document.getElementById(ids.awb);
+        if (shutterEl && shutterEl.value !== '') settings[band].shutter = parseInt(shutterEl.value, 10);
+        if (gainEl && gainEl.value !== '') settings[band].gain = parseFloat(gainEl.value);
+        if (evEl && evEl.value !== '') settings[band].ev = parseInt(evEl.value, 10);
+        if (awbEl && awbEl.value.trim() !== '') settings[band].awb = awbEl.value.trim();
+      });
       try {
-        const r = await fetch('/api/camera/display', {
+        const r = await fetch('/api/camera/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg })
+          body: JSON.stringify(settings)
         });
         const j = await r.json();
+        if (j.ok) alert('노출값 저장됨');
+        else alert(j.error || '저장 실패');
+      } catch (e) { alert(e.message || '저장 중 오류'); }
+    });
+  }
+
+  const cameraCaptureOnceBtn = document.getElementById('cameraCaptureOnceBtn');
+  if (cameraCaptureOnceBtn) {
+    cameraCaptureOnceBtn.addEventListener('click', async function () {
+      if (cameraCaptureOnceBtn.disabled) return;
+      cameraCaptureOnceBtn.disabled = true;
+      cameraCaptureOnceBtn.textContent = '촬영 중...';
+      try {
+        const r = await fetch('/api/camera/capture-once', { method: 'POST' });
+        const j = await r.json();
         if (j.ok) {
+          cameraCaptureOnceBtn.textContent = '촬영 및 업로드';
           refreshCameraStatus();
         } else {
-          alert(j.error || '저장 실패');
+          cameraCaptureOnceBtn.textContent = '촬영 및 업로드';
+          alert(j.error || j.message || '촬영 실패');
         }
       } catch (e) {
-        alert(e.message || '저장 중 오류');
+        cameraCaptureOnceBtn.textContent = '촬영 및 업로드';
+        alert(e.message || '요청 실패');
       }
+      cameraCaptureOnceBtn.disabled = false;
     });
   }
 
   refreshCameraStatus();
+  loadCameraExposureSettings();
   setInterval(refreshCameraStatus, 60000);
 
   fetchSerialStatus();
