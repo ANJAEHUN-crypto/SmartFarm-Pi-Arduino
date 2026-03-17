@@ -73,17 +73,56 @@ def _poll_badge():
     except Exception:
         pass
 
-def _check_disconnect_alert():
+def _camera_capture_job():
+    """camera.enabled 이면 주기적으로 촬영·업로드."""
     try:
-        import alert_email
-        alert_email.check_disconnect_and_alert()
-    except Exception:
-        pass
+        import json
+        import os
+        path = os.path.join(os.path.dirname(__file__), "..", "config.json")
+        if not os.path.exists(path):
+            return
+        with open(path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        if not config.get("camera", {}).get("enabled"):
+            return
+        import camera_capture
+        camera_capture.main()
+    except Exception as e:
+        print("camera_capture job error:", e)
+
+def _telegram_status_job():
+    """telegram.enabled 이면 주기적으로 작동 현황 전송."""
+    try:
+        import telegram_status
+        telegram_status.send_periodic_status()
+    except Exception as e:
+        print("telegram_status job error:", e)
 
 def start_scheduler():
     scheduler.add_job(_run_schedules, IntervalTrigger(minutes=1), id="relay_schedule")
     scheduler.add_job(_poll_badge, IntervalTrigger(seconds=1), id="badge_poll")
-    scheduler.add_job(_check_disconnect_alert, IntervalTrigger(minutes=1), id="disconnect_alert")
+    # 카메라: 10분(600초) 주기 또는 config camera.interval_seconds
+    try:
+        import json, os
+        path = os.path.join(os.path.dirname(__file__), "..", "config.json")
+        interval_sec = 600
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                interval_sec = max(60, (json.load(f).get("camera") or {}).get("interval_seconds", 600))
+        scheduler.add_job(_camera_capture_job, IntervalTrigger(seconds=interval_sec), id="camera_capture")
+    except Exception:
+        scheduler.add_job(_camera_capture_job, IntervalTrigger(minutes=10), id="camera_capture")
+    # 텔레그램: config telegram.interval_minutes (기본 10)
+    try:
+        import json, os
+        path = os.path.join(os.path.dirname(__file__), "..", "config.json")
+        interval_min = 10
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                interval_min = max(5, (json.load(f).get("telegram") or {}).get("interval_minutes", 10))
+        scheduler.add_job(_telegram_status_job, IntervalTrigger(minutes=interval_min), id="telegram_status")
+    except Exception:
+        scheduler.add_job(_telegram_status_job, IntervalTrigger(minutes=10), id="telegram_status")
     scheduler.start()
 
 def stop_scheduler():

@@ -15,16 +15,16 @@
   },
   "camera": {
     "enabled": false,
-    "interval_seconds": 3600,
-    "save_dir": "data/photos"
+    "interval_seconds": 600,
+    "save_dir": "data/photos",
+    "rclone_remote": "",
+    "rclone_path": "SmartFarmPhotos",
+    "delete_after_upload": true
   },
-  "alert": {
-    "email_enabled": false,
-    "smtp_host": "smtp.gmail.com",
-    "smtp_port": 587,
-    "smtp_user": "",
-    "smtp_password": "",
-    "to_email": "",
-    "disconnect_seconds": 300
+  "telegram": {
+    "enabled": false,
+    "bot_token": "",
+    "chat_id": "",
+    "interval_minutes": 10
   }
 }

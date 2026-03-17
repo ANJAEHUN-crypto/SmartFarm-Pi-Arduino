@@ -94,19 +94,14 @@ pip install -r ../requirements.txt
 - 저장 시 ON 시각 기준으로 정렬되어 표시·실행됨
 - 서버가 1분마다 현재 시각과 비교해 해당 시각에 ON/OFF 전송
 
-### 4. 캠 (일정 시간 촬영)
+### 4. 캠 (촬영 · 업로드, 10차 통합)
 
-- `config.json` 의 `camera.save_dir` 에 저장 (기본: `data/photos`)
-- 1장만 촬영:
-  ```bash
-  cd pi && python camera_capture.py once
-  ```
-- 일정 간격으로 촬영하려면 cron 예시:
-  ```bash
-  # 매시 0분에 1장
-  0 * * * * cd /home/pi/smart_farm/pi && python camera_capture.py once
-  ```
-- Pi 공식 카메라: `picamera2` 설치 후 사용. USB 캠: `opencv-python-headless` 로 `camera_capture.py` 내 USB 캠 경로 사용 가능.
+- **저장 경로**: `config.json` 의 `camera.save_dir` (기본: `data/photos`). 절대 경로 또는 프로젝트 기준 상대 경로.
+- **촬영**: `rpicam-still` 우선(시간대별 노출 보정), 없으면 picamera2 → OpenCV(USB 캠) 순으로 시도.
+- **1장 촬영**: `cd pi && python camera_capture.py once`
+- **주기 촬영**: `camera.enabled: true` 이면 앱 스케줄러가 `camera.interval_seconds`(기본 600=10분)마다 자동 촬영. 또는 cron 예: `*/10 * * * * cd /path/to/26_2_24_01/pi && python camera_capture.py once`
+- **Google Drive 업로드**: `camera.rclone_remote`, `camera.rclone_path` 설정 시 촬영 후 rclone 업로드 (예: 원격 폴더 `SmartFarmPhotos` = 내 드라이브 > SmartFarmPhotos). `delete_after_upload: true` 이면 업로드 성공 시 로컬 파일 삭제.
+- **상태**: 촬영/업로드 결과는 `save_dir` 내 `camera_status.json` 에 기록되며 웹 "카메라 상태" 섹션에서 확인.
 
 ## RS485 배지 + HiveMQ (MQTT)
 
@@ -128,9 +123,14 @@ pip install -r ../requirements.txt
 - 센서에서 한 줄이 **JSON 문자열**이면(예: `{"sensor":"temp","value":25.5}`) 그대로 파싱해 `t`(타임스탬프)와 합친 하나의 JSON으로 토픽에 퍼블리시함.
 - 배지 기록은 `data/badge_history.json` 에 저장되며, 웹의 **RS485 배지 데이터 (그래프)** 섹션과 `GET /api/badge/history?limit=100` API로 확인 가능.
 
-## 연결 끊김 시 이메일 알림 (선택)
+## 텔레그램 주기 현황 (선택, 10차)
 
-- `config.json` 의 `alert` 에서 `email_enabled: true` 로 두고 SMTP 정보·수신 주소(`to_email`)를 넣으면, 시리얼이 열려 있는데 `disconnect_seconds`(기본 300초) 동안 응답이 없을 때 한 번 이메일로 알림을 보냅니다. (재연결 후에는 다시 감지 가능.)
+- 모든 동작을 **10분 단위**로 보고 싶다면 `camera.interval_seconds: 600`, `telegram.interval_minutes: 10` 으로 두면 됩니다 (기본값).
+- `config.json` 의 `telegram.enabled: true`, `bot_token`, `chat_id` 를 설정하면 `interval_minutes`(기본 **10**)마다 다음을 텔레그램으로 전송합니다.
+  - 시리얼 연결 여부 및 마지막 활동 시각
+  - 릴레이 동작 상태 (ch1~4)
+  - 각종 센서값 (온도·습도·EC·pH·N·P·K)
+  - 사진 구글 드라이브 업로드 여부 (촬영·업로드 완료/실패 등)
 
 ## 포트
 
