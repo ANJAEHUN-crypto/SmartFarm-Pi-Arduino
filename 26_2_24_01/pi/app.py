@@ -106,7 +106,7 @@ def api_badge_history():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@app.route("/api/camera/status")
+@app.route("/api/camera/status", methods=["GET"])
 def api_camera_status():
     """통합 카메라 모듈 기준 최근 촬영/업로드 상태 (config camera.save_dir)."""
     try:
@@ -129,6 +129,33 @@ def api_camera_status():
         time_str = dt.strftime("%Y-%m-%d %H:%M:%S")
         msg = "마지막 촬영 파일: {} (저장 시각: {})".format(os.path.basename(latest), time_str)
         return jsonify({"ok": True, "source": "files", "message": msg, "time": time_str})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/camera/display", methods=["POST"])
+def api_camera_display():
+    """웹에서 카메라 표시 문구 수정. custom_message 저장."""
+    try:
+        import camera_capture
+        status_file = camera_capture.get_status_path(CONFIG)
+        photos_dir = camera_capture.get_photos_dir(CONFIG)
+        body = request.json or {}
+        custom_message = (body.get("message") or body.get("custom_message") or "").strip()
+        data = {"message": "", "success": True, "updated": ""}
+        if os.path.exists(status_file):
+            try:
+                with open(status_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+        data["custom_message"] = custom_message
+        from datetime import datetime
+        data["display_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        os.makedirs(photos_dir, exist_ok=True)
+        with open(status_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

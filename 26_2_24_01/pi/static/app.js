@@ -328,6 +328,7 @@
   async function refreshCameraStatus() {
     try {
       const el = document.getElementById('cameraStatusText');
+      const inputEl = document.getElementById('cameraDisplayInput');
       if (!el) return;
       const r = await fetch('/api/camera/status');
       const j = await r.json();
@@ -336,18 +337,45 @@
         return;
       }
       if (j.data && j.source === 'status_file') {
-        // camera_status.json 형식에 맞게 간단 표시
-        const msg = j.data.message || JSON.stringify(j.data);
-        el.textContent = msg;
+        const d = j.data;
+        const custom = (d.custom_message || '').trim();
+        const autoMsg = d.message || JSON.stringify(d);
+        el.textContent = custom || autoMsg;
+        if (inputEl) inputEl.value = custom;
       } else if (j.source === 'files') {
         el.textContent = j.message || '마지막 촬영 파일 정보 없음';
+        if (inputEl) inputEl.value = '';
       } else {
         el.textContent = j.message || '카메라 상태 정보가 없습니다.';
+        if (inputEl) inputEl.value = '';
       }
     } catch (e) {
       const el = document.getElementById('cameraStatusText');
       if (el) el.textContent = '카메라 상태 조회 중 오류가 발생했습니다.';
     }
+  }
+
+  const cameraDisplaySave = document.getElementById('cameraDisplaySave');
+  if (cameraDisplaySave) {
+    cameraDisplaySave.addEventListener('click', async function () {
+      const inputEl = document.getElementById('cameraDisplayInput');
+      const msg = inputEl ? inputEl.value.trim() : '';
+      try {
+        const r = await fetch('/api/camera/display', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        const j = await r.json();
+        if (j.ok) {
+          refreshCameraStatus();
+        } else {
+          alert(j.error || '저장 실패');
+        }
+      } catch (e) {
+        alert(e.message || '저장 중 오류');
+      }
+    });
   }
 
   refreshCameraStatus();

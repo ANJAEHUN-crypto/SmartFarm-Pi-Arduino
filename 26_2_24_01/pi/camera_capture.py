@@ -137,7 +137,7 @@ def upload_to_drive(file_path, config=None):
 
 
 def write_status(photos_dir, message, success=True, config=None):
-    """camera_status.json 기록 (웹 API에서 사용)."""
+    """camera_status.json 기록 (웹 API에서 사용). 기존 custom_message는 유지."""
     path = get_status_path(config)
     try:
         os.makedirs(photos_dir, exist_ok=True)
@@ -146,6 +146,14 @@ def write_status(photos_dir, message, success=True, config=None):
             "success": success,
             "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+                if existing.get("custom_message") is not None:
+                    data["custom_message"] = existing["custom_message"]
+            except Exception:
+                pass
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:

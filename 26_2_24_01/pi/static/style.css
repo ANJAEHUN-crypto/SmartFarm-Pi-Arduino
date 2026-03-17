@@ -41,6 +41,10 @@ h1 { margin: 0; font-size: 1.5rem; }
 .camera-status-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .camera-status-section h2 { margin-top: 0; font-size: 1.1rem; }
 .camera-status-section p { margin: 0.25rem 0 0 0; font-size: 0.95rem; color: #333; }
+.camera-display-edit { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
+.camera-display-edit label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
+.camera-display-edit input { width: 100%; max-width: 400px; padding: 0.4rem; margin-right: 0.5rem; }
+.camera-display-edit button { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; margin-top: 0.25rem; }
 
 .schedule-list li span:first-child { white-space: nowrap; font-size: 1rem; }
 

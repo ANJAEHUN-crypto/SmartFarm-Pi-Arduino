@@ -62,21 +62,38 @@ def build_status_message(config=None):
     except Exception:
         lines.append("• 시리얼: 확인 불가")
 
+    # 릴레이: 웹과 동일하게 1ch LED1, 2ch PUMP1, 3ch LED2, 4ch PUMP2 / ON·OFF
     try:
         import serial_relay
         state = serial_relay.get_state()
         if state is not None:
-            lines.append("• 릴레이: ch1~4 {}".format(state))
+            labels = ["LED1", "PUMP1", "LED2", "PUMP2"]
+            parts = []
+            for i, name in enumerate(labels):
+                if i < len(state):
+                    parts.append("{} {}".format(name, "ON" if state[i] else "OFF"))
+            lines.append("• 릴레이: " + ", ".join(parts))
         else:
             lines.append("• 릴레이: 상태 없음")
     except Exception:
         lines.append("• 릴레이: 확인 불가")
 
+    # 센서: badge_history는 { t, raw } 저장 → raw 문자열을 파싱해 soil_* 추출 (웹과 동일)
     try:
         import badge_mqtt
         history = badge_mqtt.get_badge_history(limit=1, days=7)
         if history:
             d = history[-1]
+            raw = d.get("raw")
+            if isinstance(raw, str) and raw.strip().startswith("{"):
+                try:
+                    parsed = json.loads(raw)
+                except (ValueError, TypeError):
+                    parsed = {}
+            elif isinstance(raw, dict):
+                parsed = raw
+            else:
+                parsed = {}
             parts = []
             for key, label in [
                 ("soil_temperature", "온도"),
@@ -87,7 +104,7 @@ def build_status_message(config=None):
                 ("soil_P", "P"),
                 ("soil_K", "K"),
             ]:
-                v = d.get(key)
+                v = parsed.get(key)
                 if v is not None:
                     parts.append("{} {}".format(label, v))
             if parts:
@@ -99,17 +116,19 @@ def build_status_message(config=None):
     except Exception:
         lines.append("• 센서: 확인 불가")
 
+    # 카메라: 웹에서 수정한 custom_message 우선, 없으면 자동 message
     try:
         import camera_capture
         status_path = camera_capture.get_status_path(config)
         if os.path.exists(status_path):
             with open(status_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            lines.append("• 사진·구글 드라이브 업로드: {}".format(data.get("message", "-")))
+            msg = (data.get("custom_message") or "").strip() or data.get("message", "-")
+            lines.append("• 카메라: {}".format(msg))
         else:
-            lines.append("• 사진·구글 드라이브 업로드: 상태 없음")
+            lines.append("• 카메라: 상태 없음")
     except Exception:
-        lines.append("• 사진·구글 드라이브 업로드: 확인 불가")
+        lines.append("• 카메라: 확인 불가")
 
     from datetime import datetime
     lines.append("")
