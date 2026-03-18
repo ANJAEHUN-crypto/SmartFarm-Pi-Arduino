@@ -135,7 +135,7 @@ def api_camera_status():
 
 @app.route("/api/camera/settings", methods=["GET"])
 def api_camera_settings_get():
-    """웹에서 사용할 카메라 노출 설정 (낮/저녁/야간) 반환."""
+    """웹에서 사용할 카메라 시간별 노출 설정(00~23시) 반환."""
     try:
         import camera_capture
         settings = camera_capture.load_exposure_settings(CONFIG)
@@ -146,21 +146,11 @@ def api_camera_settings_get():
 
 @app.route("/api/camera/settings", methods=["POST"])
 def api_camera_settings_post():
-    """웹에서 카메라 노출·촬영값 저장 (낮/저녁/야간 shutter, gain, ev, awb)."""
+    """웹에서 카메라 노출·촬영값 저장 (시간별 shutter, gain, ev, awb)."""
     try:
         import camera_capture
         body = request.json or {}
-        current = camera_capture.load_exposure_settings(CONFIG)
-        for band in ("day", "evening", "night"):
-            if isinstance(body.get(band), dict):
-                for key in ("shutter", "gain", "ev", "awb"):
-                    if key in body[band]:
-                        val = body[band][key]
-                        if key == "awb":
-                            current[band][key] = str(val)
-                        else:
-                            current[band][key] = int(val) if key in ("shutter", "ev") else float(val)
-        camera_capture.save_exposure_settings(current, CONFIG)
+        camera_capture.save_exposure_settings(body, CONFIG)
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500

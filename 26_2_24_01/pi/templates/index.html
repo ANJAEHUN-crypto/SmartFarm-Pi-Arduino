@@ -68,31 +68,9 @@
       </div>
     </div>
     <div class="camera-exposure-edit">
-      <h3>노출·촬영값 (시간대별, 웹에서 수정)</h3>
-      <p class="camera-exposure-hint">낮 06~18시 / 저녁 05~06·18~22시 / 야간 22~05시. shutter(μs), gain, ev, awb.</p>
-      <div class="camera-exposure-grid">
-        <div class="camera-exposure-band" data-band="day">
-          <h4>낮</h4>
-          <label>shutter <input type="number" id="camDayShutter" min="1" step="1"></label>
-          <label>gain <input type="number" id="camDayGain" min="0.1" step="0.1"></label>
-          <label>ev <input type="number" id="camDayEv" step="1"></label>
-          <label>awb <input type="text" id="camDayAwb" placeholder="auto"></label>
-        </div>
-        <div class="camera-exposure-band" data-band="evening">
-          <h4>저녁·새벽</h4>
-          <label>shutter <input type="number" id="camEveShutter" min="1" step="1"></label>
-          <label>gain <input type="number" id="camEveGain" min="0.1" step="0.1"></label>
-          <label>ev <input type="number" id="camEveEv" step="1"></label>
-          <label>awb <input type="text" id="camEveAwb" placeholder="fluorescent"></label>
-        </div>
-        <div class="camera-exposure-band" data-band="night">
-          <h4>야간</h4>
-          <label>shutter <input type="number" id="camNightShutter" min="1" step="1"></label>
-          <label>gain <input type="number" id="camNightGain" min="0.1" step="0.1"></label>
-          <label>ev <input type="number" id="camNightEv" step="1"></label>
-          <label>awb <input type="text" id="camNightAwb" placeholder="incandescent"></label>
-        </div>
-      </div>
+      <h3>노출·촬영값 (1시간 간격, 웹에서 수정)</h3>
+      <p class="camera-exposure-hint">00시부터 23시까지 한 시간 단위로 shutter(μs), gain, ev, awb를 설정합니다.</p>
+      <div class="camera-exposure-grid" id="cameraExposureGrid"></div>
       <button type="button" id="cameraExposureSave">노출값 저장</button>
     </div>
   </section>

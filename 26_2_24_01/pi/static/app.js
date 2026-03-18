@@ -348,42 +348,63 @@
     }
   }
 
-  const exposureIds = {
-    day: { shutter: 'camDayShutter', gain: 'camDayGain', ev: 'camDayEv', awb: 'camDayAwb' },
-    evening: { shutter: 'camEveShutter', gain: 'camEveGain', ev: 'camEveEv', awb: 'camEveAwb' },
-    night: { shutter: 'camNightShutter', gain: 'camNightGain', ev: 'camNightEv', awb: 'camNightAwb' }
-  };
+  const cameraExposureGrid = document.getElementById('cameraExposureGrid');
+  const CAMERA_EXPOSURE_FIELDS = ['shutter', 'gain', 'ev', 'awb'];
+  function getCameraExposureInputId(hour, field) {
+    return 'camHour' + String(hour).padStart(2, '0') + field.charAt(0).toUpperCase() + field.slice(1);
+  }
+  function getCameraAwbPlaceholder(hour) {
+    if (hour >= 6 && hour < 18) return 'auto';
+    if (hour === 5 || (hour >= 18 && hour < 22)) return 'fluorescent';
+    return 'incandescent';
+  }
+  function renderCameraExposureInputs() {
+    if (!cameraExposureGrid) return;
+    cameraExposureGrid.innerHTML = Array.from({ length: 24 }, function (_, hour) {
+      const hh = String(hour).padStart(2, '0');
+      return '' +
+        '<div class="camera-exposure-band" data-hour="' + hh + '">' +
+          '<h4>' + hh + ':00 ~ ' + hh + ':59</h4>' +
+          '<label>shutter <input type="number" id="' + getCameraExposureInputId(hour, 'shutter') + '" min="1" step="1"></label>' +
+          '<label>gain <input type="number" id="' + getCameraExposureInputId(hour, 'gain') + '" min="0.1" step="0.1"></label>' +
+          '<label>ev <input type="number" id="' + getCameraExposureInputId(hour, 'ev') + '" step="1"></label>' +
+          '<label>awb <input type="text" id="' + getCameraExposureInputId(hour, 'awb') + '" placeholder="' + getCameraAwbPlaceholder(hour) + '"></label>' +
+        '</div>';
+    }).join('');
+  }
   async function loadCameraExposureSettings() {
+    if (!cameraExposureGrid) return;
     try {
       const r = await fetch('/api/camera/settings');
       const j = await r.json();
       if (!j.ok || !j.settings) return;
-      ['day', 'evening', 'night'].forEach(function (band) {
-        const s = j.settings[band];
-        if (!s) return;
-        const ids = exposureIds[band];
-        if (ids.shutter) { const el = document.getElementById(ids.shutter); if (el) el.value = s.shutter ?? ''; }
-        if (ids.gain) { const el = document.getElementById(ids.gain); if (el) el.value = s.gain ?? ''; }
-        if (ids.ev) { const el = document.getElementById(ids.ev); if (el) el.value = s.ev ?? ''; }
-        if (ids.awb) { const el = document.getElementById(ids.awb); if (el) el.value = s.awb ?? ''; }
-      });
+      for (let hour = 0; hour < 24; hour += 1) {
+        const key = String(hour).padStart(2, '0');
+        const s = j.settings[key];
+        if (!s) continue;
+        CAMERA_EXPOSURE_FIELDS.forEach(function (field) {
+          const el = document.getElementById(getCameraExposureInputId(hour, field));
+          if (el) el.value = s[field] ?? '';
+        });
+      }
     } catch (_) {}
   }
   const cameraExposureSave = document.getElementById('cameraExposureSave');
   if (cameraExposureSave) {
     cameraExposureSave.addEventListener('click', async function () {
-      const settings = { day: {}, evening: {}, night: {} };
-      ['day', 'evening', 'night'].forEach(function (band) {
-        const ids = exposureIds[band];
-        const shutterEl = document.getElementById(ids.shutter);
-        const gainEl = document.getElementById(ids.gain);
-        const evEl = document.getElementById(ids.ev);
-        const awbEl = document.getElementById(ids.awb);
-        if (shutterEl && shutterEl.value !== '') settings[band].shutter = parseInt(shutterEl.value, 10);
-        if (gainEl && gainEl.value !== '') settings[band].gain = parseFloat(gainEl.value);
-        if (evEl && evEl.value !== '') settings[band].ev = parseInt(evEl.value, 10);
-        if (awbEl && awbEl.value.trim() !== '') settings[band].awb = awbEl.value.trim();
-      });
+      const settings = {};
+      for (let hour = 0; hour < 24; hour += 1) {
+        const key = String(hour).padStart(2, '0');
+        settings[key] = {};
+        const shutterEl = document.getElementById(getCameraExposureInputId(hour, 'shutter'));
+        const gainEl = document.getElementById(getCameraExposureInputId(hour, 'gain'));
+        const evEl = document.getElementById(getCameraExposureInputId(hour, 'ev'));
+        const awbEl = document.getElementById(getCameraExposureInputId(hour, 'awb'));
+        if (shutterEl && shutterEl.value !== '') settings[key].shutter = parseInt(shutterEl.value, 10);
+        if (gainEl && gainEl.value !== '') settings[key].gain = parseFloat(gainEl.value);
+        if (evEl && evEl.value !== '') settings[key].ev = parseInt(evEl.value, 10);
+        if (awbEl && awbEl.value.trim() !== '') settings[key].awb = awbEl.value.trim();
+      }
       try {
         const r = await fetch('/api/camera/settings', {
           method: 'POST',
@@ -422,6 +443,7 @@
   }
 
   refreshCameraStatus();
+  renderCameraExposureInputs();
   loadCameraExposureSettings();
   setInterval(refreshCameraStatus, 60000);
 

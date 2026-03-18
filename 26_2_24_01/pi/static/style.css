@@ -7,58 +7,58 @@ h1 { margin: 0; font-size: 1.5rem; }
 #serialStatus.connected { color: #0a0; }
 #btnSerialToggle { padding: 0.4rem 0.8rem; cursor: pointer; }
 
-.relay-section, .schedule-section, .badge-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.relay-section h2, .schedule-section h2, .badge-section h2 { margin-top: 0; font-size: 1.1rem; }
+.relay-section, .schedule-section, .badge-section { background: #fff; border-radius: 10px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.relay-section h2, .schedule-section h2, .badge-section h2 { margin-top: 0; margin-bottom: 0.85rem; font-size: 1.18rem; }
 .badge-value-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin: 0.5rem 0; }
 .badge-value-card { background: #fafafa; border-radius: 8px; padding: 0.75rem; border: 1px solid #eee; }
 .badge-value-card .badge-value-label { display: block; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.35rem; color: #333; }
 .badge-value-card .badge-value-row { font-size: 0.9rem; color: #555; margin: 0.2rem 0; }
 .badge-value-card .badge-value-row span:last-of-type { font-weight: 600; color: #111; margin-left: 0.25rem; }
 .badge-hint { font-size: 0.9rem; color: #666; margin: 0.5rem 0 0 0; }
-.relay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
-.relay-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
-.relay-card .label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
-.relay-card .state { margin: 0.5rem 0; font-size: 1.2rem; }
+.relay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
+.relay-card { border: 1px solid #ddd; border-radius: 10px; padding: 1.1rem; text-align: center; background: #fafafa; }
+.relay-card .label { display: block; font-weight: bold; margin-bottom: 0.55rem; font-size: 1.05rem; }
+.relay-card .state { margin: 0.6rem 0; font-size: 1.35rem; }
 .relay-card .state.on { color: #0a0; }
 .relay-card .state.off { color: #c00; }
-.relay-card .btns { display: flex; gap: 0.5rem; justify-content: center; }
-.relay-card .btns button { padding: 0.4rem 0.8rem; cursor: pointer; }
-.relay-card .btns .on { background: #0a0; color: #fff; border: none; border-radius: 4px; }
-.relay-card .btns .off { background: #c00; color: #fff; border: none; border-radius: 4px; }
+.relay-card .btns { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.2rem; }
+.relay-card .btns button { min-width: 72px; padding: 0.55rem 1rem; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
+.relay-card .btns .on { background: #0a0; color: #fff; border: none; border-radius: 6px; }
+.relay-card .btns .off { background: #c00; color: #fff; border: none; border-radius: 6px; }
 
-.schedule-channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-.channel-block { border: 1px solid #eee; border-radius: 8px; padding: 1rem; }
-.channel-block h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
-.schedule-day-filters { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.5rem; }
-.schedule-day-filters .day-filter { padding: 0.25rem 0.5rem; font-size: 0.8rem; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+.schedule-channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.channel-block { border: 1px solid #eee; border-radius: 10px; padding: 1.1rem; background: #fafafa; }
+.channel-block h3 { margin: 0 0 0.6rem 0; font-size: 1.12rem; }
+.schedule-day-filters { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.65rem; }
+.schedule-day-filters .day-filter { padding: 0.35rem 0.68rem; font-size: 0.88rem; cursor: pointer; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
 .schedule-day-filters .day-filter:hover { background: #f0f0f0; }
 .schedule-day-filters .day-filter.active { background: #07c; color: #fff; border-color: #07c; }
-.schedule-list { list-style: none; padding: 0; margin: 0 0 0.5rem 0; max-height: 200px; overflow-y: auto; }
-.schedule-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+.schedule-list { list-style: none; padding: 0; margin: 0 0 0.65rem 0; max-height: 220px; overflow-y: auto; }
+.schedule-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.48rem 0.4rem; border-bottom: 1px solid #eee; font-size: 1rem; }
 .schedule-list li .del { cursor: pointer; color: #c00; }
-.add-schedule { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; }
+.add-schedule { min-width: 132px; padding: 0.55rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 6px; font-size: 0.97rem; font-weight: 600; }
 
-.camera-status-section { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.camera-status-section h2 { margin-top: 0; font-size: 1.1rem; }
+.camera-status-section { background: #fff; border-radius: 10px; padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.camera-status-section h2 { margin-top: 0; margin-bottom: 0.85rem; font-size: 1.18rem; }
 .camera-status-section p { margin: 0.25rem 0 0 0; font-size: 0.95rem; color: #333; }
 /* 11차: 촬영·업로드 칸을 릴레이 1ch 분량으로 제한 (relay-card와 동일 minmax 기준) */
-.camera-capture-once-wrapper { display: grid; grid-template-columns: repeat(1, minmax(160px, 160px)); margin-top: 0.75rem; }
-.camera-capture-once { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem 1rem; text-align: center; background: #fafafa; }
-.camera-capture-once .label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
+.camera-capture-once-wrapper { display: grid; grid-template-columns: repeat(1, minmax(190px, 190px)); margin-top: 0.85rem; }
+.camera-capture-once { border: 1px solid #ddd; border-radius: 10px; padding: 1.1rem; text-align: center; background: #fafafa; }
+.camera-capture-once .label { display: block; font-weight: bold; margin-bottom: 0.35rem; font-size: 1.05rem; }
 .camera-capture-hint { font-size: 0.8rem; color: #666; margin: 0 0 0.5rem 0; }
-.camera-capture-once button { padding: 0.5rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; font-size: 0.95rem; width: 100%; max-width: 100%; }
+.camera-capture-once button { min-height: 42px; padding: 0.55rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; width: 100%; max-width: 100%; }
 .camera-capture-once button:disabled { opacity: 0.7; cursor: not-allowed; }
 .camera-exposure-edit { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
 .camera-exposure-edit h3 { margin: 0 0 0.25rem 0; font-size: 1rem; }
 .camera-exposure-hint { font-size: 0.8rem; color: #666; margin: 0 0 0.5rem 0; }
-.camera-exposure-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem; }
-.camera-exposure-band { background: #f8f8f8; padding: 0.5rem 0.75rem; border-radius: 6px; min-width: 140px; }
+.camera-exposure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+.camera-exposure-band { background: #f8f8f8; padding: 0.6rem 0.8rem; border-radius: 10px; min-width: 0; border: 1px solid #eee; }
 .camera-exposure-band h4 { margin: 0 0 0.35rem 0; font-size: 0.9rem; }
 .camera-exposure-band label { display: block; font-size: 0.8rem; margin-bottom: 0.2rem; }
 .camera-exposure-band input { width: 100%; padding: 0.25rem; box-sizing: border-box; }
-.camera-exposure-edit #cameraExposureSave { padding: 0.4rem 0.8rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 4px; }
+.camera-exposure-edit #cameraExposureSave { min-width: 132px; min-height: 42px; padding: 0.55rem 1rem; cursor: pointer; background: #07c; color: #fff; border: none; border-radius: 6px; font-weight: 600; }
 
-.schedule-list li span:first-child { white-space: nowrap; font-size: 1rem; }
+.schedule-list li span:first-child { white-space: nowrap; font-size: 1.04rem; }
 
 .days-input-group { margin-top: 0.5rem; }
 .days-input-label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 0.25rem; }
@@ -67,8 +67,8 @@ h1 { margin: 0; font-size: 1.5rem; }
 
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 10; }
 .modal.hidden { display: none; }
-.modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; min-width: 280px; }
+.modal-content { background: #fff; padding: 1.5rem; border-radius: 10px; min-width: 280px; }
 .modal-content label { display: block; margin: 0.5rem 0; }
 .modal-content input[type=time], .modal-content input[type=text] { width: 100%; padding: 0.4rem; }
 .modal-btns { margin-top: 1rem; display: flex; gap: 0.5rem; }
-.modal-btns button { padding: 0.5rem 1rem; cursor: pointer; }
+.modal-btns button { min-height: 42px; padding: 0.55rem 1rem; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; font-weight: 600; }

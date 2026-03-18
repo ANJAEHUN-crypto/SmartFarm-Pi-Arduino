@@ -22,6 +22,7 @@ DEFAULT_EXPOSURE = {
     "evening": {"shutter": 33000, "gain": 1.5, "ev": 1, "awb": "fluorescent"},
     "night": {"shutter": 66000, "gain": 2.0, "ev": 2, "awb": "incandescent"},
 }
+EXPOSURE_FIELDS = ("shutter", "gain", "ev", "awb")
 
 
 def load_config():
@@ -57,47 +58,108 @@ def get_exposure_settings_path(config=None):
     return os.path.join(data_dir, EXPOSURE_SETTINGS_FILENAME)
 
 
-def load_exposure_settings(config=None):
-    """data/camera_exposure.json 로드. 없으면 기본값 복사본 반환."""
-    path = get_exposure_settings_path(config)
-    out = {k: dict(v) for k, v in DEFAULT_EXPOSURE.items()}
-    if os.path.exists(path):
+def _hour_key(hour):
+    return "{:02d}".format(int(hour))
+
+
+def _default_profile_for_hour(hour):
+    hour = int(hour)
+    if 6 <= hour < 18:
+        return dict(DEFAULT_EXPOSURE["day"])
+    if hour == 5 or 18 <= hour < 22:
+        return dict(DEFAULT_EXPOSURE["evening"])
+    return dict(DEFAULT_EXPOSURE["night"])
+
+
+def _default_hourly_exposure():
+    return {_hour_key(hour): _default_profile_for_hour(hour) for hour in range(24)}
+
+
+def _normalize_profile(target, raw):
+    if not isinstance(raw, dict):
+        return
+    for key in EXPOSURE_FIELDS:
+        if key not in raw:
+            continue
+        value = raw[key]
+        if value in (None, ""):
+            continue
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                saved = json.load(f)
-            for band in ("day", "evening", "night"):
-                if isinstance(saved.get(band), dict):
-                    for key in ("shutter", "gain", "ev", "awb"):
-                        if key in saved[band]:
-                            out[band][key] = saved[band][key]
-        except Exception:
-            pass
+            if key == "awb":
+                target[key] = str(value)
+            elif key in ("shutter", "ev"):
+                target[key] = int(value)
+            else:
+                target[key] = float(value)
+        except (TypeError, ValueError):
+            continue
+
+
+def normalize_exposure_settings(settings):
+    """
+    노출 설정을 시간별(00~23) 포맷으로 정규화.
+    기존 day/evening/night 포맷도 읽어서 자동 확장한다.
+    """
+    out = _default_hourly_exposure()
+    source = settings.get("hours") if isinstance(settings, dict) and isinstance(settings.get("hours"), dict) else settings
+    has_hourly = False
+
+    if isinstance(source, dict):
+        for hour in range(24):
+            key = _hour_key(hour)
+            if isinstance(source.get(key), dict):
+                _normalize_profile(out[key], source[key])
+                has_hourly = True
+            elif isinstance(source.get(hour), dict):
+                _normalize_profile(out[key], source[hour])
+                has_hourly = True
+
+    if has_hourly:
+        return out
+
+    if isinstance(source, dict):
+        for hour in range(24):
+            if 6 <= hour < 18:
+                band = "day"
+            elif hour == 5 or 18 <= hour < 22:
+                band = "evening"
+            else:
+                band = "night"
+            if isinstance(source.get(band), dict):
+                _normalize_profile(out[_hour_key(hour)], source[band])
+
     return out
 
 
+def load_exposure_settings(config=None):
+    """data/camera_exposure.json 로드. 없으면 시간별 기본값 반환."""
+    path = get_exposure_settings_path(config)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return normalize_exposure_settings(json.load(f))
+        except Exception:
+            pass
+    return _default_hourly_exposure()
+
+
 def save_exposure_settings(settings, config=None):
-    """웹에서 설정한 노출값 저장."""
+    """웹에서 설정한 시간별 노출값 저장."""
     path = get_exposure_settings_path(config)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(settings, f, ensure_ascii=False, indent=2)
+        json.dump(normalize_exposure_settings(settings), f, ensure_ascii=False, indent=2)
 
 
 def _get_exposure_profile(now=None, config=None):
     """
     현재 시각 기준 노출 프로필 반환.
-    웹에서 저장한 값(data/camera_exposure.json) 우선, 없으면 기본값.
-    낮(06~18) / 저녁(05~06, 18~22) / 야간(22~05)
+    웹에서 저장한 시간별 값(data/camera_exposure.json) 우선, 없으면 기본값.
     """
-    bands = load_exposure_settings(config)
+    settings = load_exposure_settings(config)
     if now is None:
         now = datetime.now()
-    h = now.hour
-    if 6 <= h < 18:
-        return dict(bands["day"])
-    if (5 <= h < 6) or (18 <= h < 22):
-        return dict(bands["evening"])
-    return dict(bands["night"])
+    return dict(settings[_hour_key(now.hour)])
 
 
 def capture_once_rpicam(save_path, config=None):
