@@ -448,6 +448,8 @@
   setInterval(refreshCameraStatus, 60000);
 
   fetchSerialStatus();
+  refreshState();
   loadSchedules();
-  setInterval(refreshState, 3000);
+  setInterval(fetchSerialStatus, 30000);
+  setInterval(refreshState, 30000);
 })();

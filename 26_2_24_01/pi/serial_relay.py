@@ -20,7 +20,10 @@ _reader_running = False
 _response_queue = Queue()
 _badge_lines = []
 _badge_lock = threading.Lock()
+_io_lock = threading.Lock()
 _last_activity = 0.0  # 연결 끊김 감지용
+_last_port = DEFAULT_PORT
+_last_baud = DEFAULT_BAUD
 
 def _update_activity():
     global _last_activity
@@ -46,18 +49,41 @@ def _serial_reader():
                 _response_queue.put(line)
                 _update_activity()
         except Exception:
+            try:
+                if _ser and _ser.is_open:
+                    _ser.close()
+            except Exception:
+                pass
+            _ser = None
             if _reader_running:
                 time.sleep(0.05)
             break
 
+
+def _clear_response_queue():
+    while True:
+        try:
+            _response_queue.get_nowait()
+        except Empty:
+            break
+
+
+def _reconnect():
+    close()
+    time.sleep(0.2)
+    open(port=_last_port, baud=_last_baud)
+
+
 def open(port=None, baud=None):
-    global _ser, _reader_thread, _reader_running, _response_queue, _badge_lines
+    global _ser, _reader_thread, _reader_running, _response_queue, _badge_lines, _last_port, _last_baud
     port = port or DEFAULT_PORT
     baud = baud or DEFAULT_BAUD
+    _last_port = port
+    _last_baud = baud
     if _ser and _ser.is_open:
         close()
-    _ser = serial.Serial(port, baud, timeout=0.2)
-    time.sleep(0.1)
+    _ser = serial.Serial(port, baud, timeout=0.2, write_timeout=1.0)
+    time.sleep(1.0)
     _update_activity()
     _reader_running = True
     _response_queue = Queue()
@@ -79,19 +105,39 @@ def close():
             pass
     _ser = None
 
-def _write_read(line, expect_prefix=None):
+def _write_read(line, expect_prefix=None, timeout=2.5, retries=2):
     global _ser, _response_queue
-    if not _ser or not _ser.is_open:
-        raise RuntimeError("Serial not open")
-    _ser.write((line.strip() + "\n").encode())
-    time.sleep(0.05)
-    try:
-        reply = _response_queue.get(timeout=0.5)
-    except Empty:
+    with _io_lock:
+        last_error = None
+        for attempt in range(retries + 1):
+            try:
+                if not _ser or not _ser.is_open:
+                    _reconnect()
+                _clear_response_queue()
+                _ser.write((line.strip() + "\n").encode())
+                _ser.flush()
+                deadline = time.time() + timeout
+                while time.time() < deadline:
+                    wait = max(0.1, deadline - time.time())
+                    try:
+                        reply = _response_queue.get(timeout=min(0.5, wait))
+                    except Empty:
+                        continue
+                    if expect_prefix and not reply.startswith(expect_prefix):
+                        continue
+                    return reply
+                last_error = RuntimeError("Serial response timeout")
+            except Exception as e:
+                last_error = e
+            if attempt < retries:
+                try:
+                    _reconnect()
+                except Exception as e:
+                    last_error = e
+                time.sleep(0.2)
+        if last_error:
+            raise last_error
         return None
-    if expect_prefix and not reply.startswith(expect_prefix):
-        return None
-    return reply
 
 def get_pending_badge_lines():
     """RS485에서 수신한 배지 데이터 줄 목록을 반환하고 버퍼 비움."""
@@ -116,7 +162,10 @@ def relay_off(ch):
 
 def get_state():
     """Returns [bool, bool, bool, bool] for ch1~4 or None on error."""
-    r = _write_read("STATE", "S ")
+    try:
+        r = _write_read("STATE", "S ")
+    except Exception:
+        return None
     if not r or not r.startswith("S "):
         return None
     parts = r[2:].split()
@@ -128,4 +177,4 @@ def get_state():
         return None
 
 def is_open():
-    return _ser is not None and _ser.is_open
+    return _ser is not None and _ser.is_open and _reader_running

@@ -55,14 +55,12 @@ def _run_schedules():
                 continue
             if on_t == now_str:
                 try:
-                    if serial_relay.is_open():
-                        serial_relay.relay_on(ch)
+                    serial_relay.relay_on(ch)
                 except Exception:
                     pass
             if off_t == now_str:
                 try:
-                    if serial_relay.is_open():
-                        serial_relay.relay_off(ch)
+                    serial_relay.relay_off(ch)
                 except Exception:
                     pass
 

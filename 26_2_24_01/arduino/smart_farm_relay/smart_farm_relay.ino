@@ -7,7 +7,7 @@
  *
  * 프로토콜 (USB 시리얼): 한 줄 단위
  *   ON 1 ~ ON 4  / OFF 1 ~ OFF 4  / STATE → "S 0 1 0 1"
- * 센서 데이터: 10분마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
+ * 센서 데이터: 3초마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
  */
 
 #include <SoftwareSerial.h>
@@ -20,6 +20,7 @@ SoftwareSerial rs485(RS485_RX, RS485_TX);
 
 const int RELAY_PINS[4] = {2, 3, 4, 5};
 bool relayState[4] = {0, 0, 0, 0};
+void handleSerial();
 
 // Modbus RTU 요청 (슬레이브 0x01, 기능 0x03, 레지스터 읽기)
 byte cmd_temp[] = {0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0xD5, 0xCA};
@@ -36,7 +37,7 @@ int soil_P = 0;
 int soil_K = 0;
 
 unsigned long sensorTimer = 0;
-const unsigned long sensorInterval = 600000;  // 10분 = 10 * 60 * 1000 ms
+const unsigned long sensorInterval = 3000;  // 3초
 
 // Modbus CRC16 계산 (표준 다항식 0xA001)
 unsigned int modbusCRC16(byte *buf, int len) {
@@ -68,10 +69,12 @@ int readSensor(byte *cmd) {
   unsigned long start = millis();
 
   while (millis() - start < 200) {
+    if (Serial.available()) handleSerial();
     if (rs485.available()) {
       buf[i++] = rs485.read();
       if (i == 7) break;
     }
+    delay(1);
   }
 
   if (i == 7) {
@@ -97,13 +100,19 @@ int readRegister(unsigned int regAddr) {
 
 void readAllSensors() {
   soil_temperature = readSensor(cmd_temp) / 10.0f;
+  handleSerial();
   soil_humidity = readSensor(cmd_humi) / 10.0f;
+  handleSerial();
   soil_ec = readSensor(cmd_ec);
+  handleSerial();
   soil_ph = readSensor(cmd_ph) / 10.0f;
+  handleSerial();
 
   // Halisense TH-EC-PH-NPK 센서의 N/P/K 레지스터는 장치 매뉴얼 기준으로 조정 필요
   int nVal = readRegister(4);  // 예: 레지스터 4 = N
+  handleSerial();
   int pVal = readRegister(5);  // 예: 레지스터 5 = P
+  handleSerial();
   int kVal = readRegister(6);  // 예: 레지스터 6 = K
   if (nVal >= 0) soil_N = nVal;
   if (pVal >= 0) soil_P = pVal;
