@@ -18,6 +18,45 @@ _mqtt_enabled = False
 _mqtt_topic = "smartfarm/badge"
 
 
+SENSOR_RANGES = {
+    "soil_temperature": (-10.0, 80.0),
+    "soil_humidity": (0.0, 100.0),
+    "soil_EC": (0.0, 20000.0),
+    "soil_ph": (0.0, 14.0),
+    "soil_N": (0.0, 2000.0),
+    "soil_P": (0.0, 2000.0),
+    "soil_K": (0.0, 2000.0),
+}
+
+
+def _sanitize_sensor_payload(parsed):
+    """센서 범위를 벗어난 값을 제거하고, 유효 센서값이 없으면 None 반환."""
+    if not isinstance(parsed, dict):
+        return None
+    out = dict(parsed)
+    valid_count = 0
+    for key, (min_v, max_v) in SENSOR_RANGES.items():
+        if key not in out:
+            continue
+        try:
+            v = float(out[key])
+        except (TypeError, ValueError):
+            out.pop(key, None)
+            continue
+        if v < min_v or v > max_v:
+            out.pop(key, None)
+            continue
+        if key in ("soil_EC", "soil_N", "soil_P", "soil_K"):
+            out[key] = int(round(v))
+        else:
+            out[key] = round(v, 2)
+        valid_count += 1
+    if valid_count == 0:
+        return None
+    out["status"] = "success"
+    return out
+
+
 def _load_history():
     if os.path.exists(BADGE_JSON):
         try:
@@ -97,26 +136,28 @@ def process_pending_badge_lines(config=None):
     out = []
     for raw in lines:
         ts = time.time()
-        item = {"t": ts, "raw": raw}
+        payload_obj = None
+        raw_to_store = raw
+        raw_stripped = raw.strip()
+        if raw_stripped.startswith("{") or raw_stripped.startswith("["):
+            try:
+                parsed = json.loads(raw_stripped)
+                payload_obj = _sanitize_sensor_payload(parsed)
+                if payload_obj is None:
+                    continue
+                raw_to_store = json.dumps(payload_obj, ensure_ascii=False)
+            except (ValueError, TypeError):
+                payload_obj = None
+        item = {"t": ts, "raw": raw_to_store}
         history.append(item)
         out.append(item)
         if _mqtt_enabled and _mqtt_client:
             try:
-                # 센서값이 JSON 문자열이면 합쳐서, 아니면 t+raw 로 퍼블리시
-                payload_obj = {"t": ts}
-                raw_stripped = raw.strip()
-                if raw_stripped.startswith("{") or raw_stripped.startswith("["):
-                    try:
-                        parsed = json.loads(raw_stripped)
-                        if isinstance(parsed, dict):
-                            payload_obj.update(parsed)
-                        else:
-                            payload_obj["raw"] = parsed
-                    except (ValueError, TypeError):
-                        payload_obj["raw"] = raw
-                else:
-                    payload_obj["raw"] = raw
-                payload = json.dumps(payload_obj, ensure_ascii=False)
+                # 센서값이 JSON이면 검증된 값만 퍼블리시
+                payload = json.dumps(
+                    {"t": ts, **payload_obj} if isinstance(payload_obj, dict) else {"t": ts, "raw": raw_to_store},
+                    ensure_ascii=False,
+                )
                 _mqtt_client.publish(_mqtt_topic, payload, qos=0)
             except Exception:
                 pass

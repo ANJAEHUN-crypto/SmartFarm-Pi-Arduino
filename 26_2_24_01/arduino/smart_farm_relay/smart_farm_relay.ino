@@ -7,7 +7,7 @@
  *
  * 프로토콜 (USB 시리얼): 한 줄 단위
  *   ON 1 ~ ON 4  / OFF 1 ~ OFF 4  / STATE → "S 0 1 0 1"
- * 센서 데이터: 3초마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
+ * 센서 데이터: 30초마다 JSON 한 줄을 "BADGE " 접두사로 Serial 전송 → Pi/HiveMQ
  */
 
 #include <SoftwareSerial.h>
@@ -37,7 +37,7 @@ int soil_P = 0;
 int soil_K = 0;
 
 unsigned long sensorTimer = 0;
-const unsigned long sensorInterval = 3000;  // 3초
+const unsigned long sensorInterval = 30000;  // 30초
 
 // Modbus CRC16 계산 (표준 다항식 0xA001)
 unsigned int modbusCRC16(byte *buf, int len) {
@@ -54,6 +54,23 @@ unsigned int modbusCRC16(byte *buf, int len) {
     }
   }
   return crc;
+}
+
+bool isValidModbusResponse(const byte *requestCmd, const byte *resp, int len) {
+  if (len != 7) return false;
+  // [addr][func][byte_count=2][data_hi][data_lo][crc_lo][crc_hi]
+  if (resp[0] != requestCmd[0] || resp[1] != 0x03 || resp[2] != 0x02) return false;
+  unsigned int calc = modbusCRC16((byte *)resp, 5);
+  unsigned int recv = (unsigned int)resp[5] | ((unsigned int)resp[6] << 8);
+  return calc == recv;
+}
+
+bool isValidFloatInRange(float v, float minV, float maxV) {
+  return (v >= minV && v <= maxV);
+}
+
+bool isValidIntInRange(int v, int minV, int maxV) {
+  return (v >= minV && v <= maxV);
 }
 
 int readSensor(byte *cmd) {
@@ -77,7 +94,7 @@ int readSensor(byte *cmd) {
     delay(1);
   }
 
-  if (i == 7) {
+  if (i == 7 && isValidModbusResponse(cmd, buf, i)) {
     int value = (int)buf[3] << 8 | buf[4];
     return value;
   }
@@ -99,13 +116,26 @@ int readRegister(unsigned int regAddr) {
 }
 
 void readAllSensors() {
-  soil_temperature = readSensor(cmd_temp) / 10.0f;
+  int tempRaw = readSensor(cmd_temp);
+  if (tempRaw >= 0) {
+    float tempVal = tempRaw / 10.0f;
+    if (isValidFloatInRange(tempVal, -10.0f, 80.0f)) soil_temperature = tempVal;
+  }
   handleSerial();
-  soil_humidity = readSensor(cmd_humi) / 10.0f;
+  int humiRaw = readSensor(cmd_humi);
+  if (humiRaw >= 0) {
+    float humiVal = humiRaw / 10.0f;
+    if (isValidFloatInRange(humiVal, 0.0f, 100.0f)) soil_humidity = humiVal;
+  }
   handleSerial();
-  soil_ec = readSensor(cmd_ec);
+  int ecRaw = readSensor(cmd_ec);
+  if (isValidIntInRange(ecRaw, 0, 20000)) soil_ec = ecRaw;
   handleSerial();
-  soil_ph = readSensor(cmd_ph) / 10.0f;
+  int phRaw = readSensor(cmd_ph);
+  if (phRaw >= 0) {
+    float phVal = phRaw / 10.0f;
+    if (isValidFloatInRange(phVal, 0.0f, 14.0f)) soil_ph = phVal;
+  }
   handleSerial();
 
   // Halisense TH-EC-PH-NPK 센서의 N/P/K 레지스터는 장치 매뉴얼 기준으로 조정 필요
@@ -114,9 +144,9 @@ void readAllSensors() {
   int pVal = readRegister(5);  // 예: 레지스터 5 = P
   handleSerial();
   int kVal = readRegister(6);  // 예: 레지스터 6 = K
-  if (nVal >= 0) soil_N = nVal;
-  if (pVal >= 0) soil_P = pVal;
-  if (kVal >= 0) soil_K = kVal;
+  if (isValidIntInRange(nVal, 0, 2000)) soil_N = nVal;
+  if (isValidIntInRange(pVal, 0, 2000)) soil_P = pVal;
+  if (isValidIntInRange(kVal, 0, 2000)) soil_K = kVal;
 
   // Pi가 "BADGE " 로 시작하는 줄만 배지/센서 데이터로 수집 → JSON 유지
   Serial.print("BADGE {\"status\":\"success\",");

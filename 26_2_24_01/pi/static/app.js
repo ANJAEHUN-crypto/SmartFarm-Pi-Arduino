@@ -270,6 +270,14 @@
     el.textContent = val == null || (typeof val === 'number' && isNaN(val)) ? '-' : val;
   }
 
+  function medianOf(values) {
+    if (!values || !values.length) return null;
+    const sorted = values.slice().sort(function (a, b) { return a - b; });
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 1) return sorted[mid];
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
   async function refreshBadgeValues() {
     try {
       const r = await fetch('/api/badge/history?days=7&limit=3000');
@@ -291,13 +299,9 @@
         { cur: 'badgePCurrent', avg: 'badgePAvg', raw: 'soil_P' },
         { cur: 'badgeKCurrent', avg: 'badgeKAvg', raw: 'soil_K' }
       ];
-      const last = hist[hist.length - 1];
-      let lastRaw = null;
-      try {
-        lastRaw = typeof last.raw === 'string' ? JSON.parse(last.raw) : last.raw;
-      } catch (_) {}
       const sums = {};
       const counts = {};
+      const recentByKey = {};
       hist.forEach((d) => {
         try {
           const raw = typeof d.raw === 'string' ? JSON.parse(d.raw) : d.raw;
@@ -305,16 +309,21 @@
             keys.forEach((k) => {
               const v = raw[k.raw];
               if (v != null && !isNaN(Number(v))) {
+                const nVal = Number(v);
                 if (!sums[k.raw]) sums[k.raw] = 0;
-                sums[k.raw] += Number(v);
+                sums[k.raw] += nVal;
                 counts[k.raw] = (counts[k.raw] || 0) + 1;
+                if (!recentByKey[k.raw]) recentByKey[k.raw] = [];
+                recentByKey[k.raw].push(nVal);
+                if (recentByKey[k.raw].length > 5) recentByKey[k.raw].shift();
               }
             });
           }
         } catch (_) {}
       });
       keys.forEach((k) => {
-        const curVal = lastRaw && lastRaw[k.raw] != null ? Number(lastRaw[k.raw]) : null;
+        const recent = recentByKey[k.raw] || [];
+        const curVal = recent.length ? Math.round(medianOf(recent) * 10) / 10 : null;
         const n = counts[k.raw] || 0;
         const avgVal = n > 0 && sums[k.raw] != null ? Math.round(sums[k.raw] / n * 10) / 10 : null;
         setBadgeEl(k.cur, curVal);
@@ -322,7 +331,7 @@
       });
     } catch (_) {}
   }
-  setInterval(refreshBadgeValues, 5000);
+  setInterval(refreshBadgeValues, 30000);
   refreshBadgeValues();
 
   async function refreshCameraStatus() {
